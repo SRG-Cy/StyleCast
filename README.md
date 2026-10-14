@@ -27,6 +27,39 @@ A chat forgets your wardrobe the moment you close it. StyleCast remembers every 
 
 Free tier with a few outfits a week; about €2–3/month for daily outfits and trip packing lists. Later: shopping-affiliate links for wardrobe gaps.
 
+## Run it
+
+You need Python 3.11+ and [Ollama](https://ollama.com).
+
+```bash
+ollama pull qwen2.5vl:7b   # tags clothes from photos
+ollama pull qwen2.5:7b     # picks outfits
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Open http://localhost:8000 (or your computer's IP on your phone, same Wi-Fi). Photos and the wardrobe stay in `data/` on your machine.
+
+Settings (environment variables):
+
+| Variable | Default | What it does |
+|---|---|---|
+| `STYLECAST_VISION_MODEL` | `qwen2.5vl:7b` | Use `qwen2.5vl:3b` on a laptop without a GPU |
+| `STYLECAST_TEXT_MODEL` | `qwen2.5:7b` | Any Ollama chat model, e.g. `llama3.1:8b` |
+| `STYLECAST_LAT` / `STYLECAST_LON` | Galway | Fallback location if the browser doesn't share one |
+| `OLLAMA_URL` | `http://localhost:11434` | Where Ollama runs |
+| `STYLECAST_MOCK` | `0` | `1` skips Ollama (fixed tags, rule-based outfits) for UI work |
+
+If the outfit model is down or answers with something invalid, StyleCast falls back to a rule-based pick, so you always get an outfit.
+
+## Tests
+
+```bash
+pip install -r requirements.txt
+pytest
+```
+
 ## Status
 
 Under construction (Oct 14–18, 2026). See [PLAN.md](PLAN.md).

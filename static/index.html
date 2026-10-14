@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StyleCast</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>StyleCast</h1>
+    <nav>
+      <button class="tab active" data-tab="today">Today</button>
+      <button class="tab" data-tab="wardrobe">Wardrobe</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="today" class="panel">
+      <div class="row">
+        <label for="occasion">Occasion</label>
+        <select id="occasion">
+          <option value="casual">Casual</option>
+          <option value="smart">Work / smart</option>
+          <option value="sporty">Gym / sporty</option>
+        </select>
+      </div>
+      <button id="get-outfit" class="primary">What should I wear?</button>
+      <p id="weather" class="muted"></p>
+      <div id="outfit" class="grid"></div>
+      <p id="reason"></p>
+      <ul id="gaps"></ul>
+      <button id="wear" class="secondary" hidden>I'm wearing this</button>
+    </section>
+
+    <section id="wardrobe" class="panel" hidden>
+      <label class="primary upload">
+        Add clothes
+        <input id="photo" type="file" accept="image/*" capture="environment" multiple hidden>
+      </label>
+      <p id="upload-status" class="muted"></p>
+      <div id="items" class="grid"></div>
+    </section>
+  </main>
+
+  <dialog id="editor">
+    <form method="dialog" id="edit-form">
+      <!-- Pressing Enter submits the first button, so make that Save. -->
+      <button value="save" hidden></button>
+      <img id="edit-photo" alt="">
+      <label>Name <input name="name" required></label>
+      <label>Category
+        <select name="category">
+          <option>top</option><option>bottom</option><option>dress</option>
+          <option>outerwear</option><option>shoes</option><option>accessory</option>
+        </select>
+      </label>
+      <label>Colour <input name="colour"></label>
+      <label>Warmth
+        <select name="warmth">
+          <option value="1">1 · light</option><option value="2">2 · medium</option><option value="3">3 · warm</option>
+        </select>
+      </label>
+      <label>Formality
+        <select name="formality"><option>casual</option><option>smart</option><option>sporty</option></select>
+      </label>
+      <label class="check"><input type="checkbox" name="waterproof"> Waterproof</label>
+      <label class="check"><input type="checkbox" name="in_wash"> In the wash</label>
+      <div class="actions">
+        <button value="delete" class="danger">Delete</button>
+        <button value="cancel">Cancel</button>
+        <button value="save" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
