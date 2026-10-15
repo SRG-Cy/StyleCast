@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StyleCast</title>
+  <meta name="description" content="Photograph your wardrobe once and get an outfit for today's weather. The AI runs in your browser; photos never leave your phone.">
+  <meta name="theme-color" content="#2f5d50">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="StyleCast">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>StyleCast</h1>
+    <nav>
+      <button class="tab active" data-tab="today">Today</button>
+      <button class="tab" data-tab="wardrobe">Wardrobe</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="install" class="install" hidden>
+      <span id="install-text">Add StyleCast to your home screen for one-tap outfits.</span>
+      <button id="install-btn" hidden>Install</button>
+      <button id="install-close" aria-label="Dismiss">✕</button>
+    </div>
+    <section id="today" class="panel">
+      <div class="row">
+        <label for="occasion">Occasion</label>
+        <select id="occasion">
+          <option value="casual">Casual</option>
+          <option value="smart">Work / smart</option>
+          <option value="sporty">Gym / sporty</option>
+        </select>
+      </div>
+      <button id="get-outfit" class="primary">What should I wear?</button>
+      <p id="weather" class="muted"></p>
+      <div id="outfit" class="grid"></div>
+      <p id="reason"></p>
+      <ul id="gaps"></ul>
+      <button id="wear" class="secondary" hidden>I'm wearing this</button>
+    </section>
+
+    <section id="wardrobe" class="panel" hidden>
+      <label class="primary upload">
+        Add clothes
+        <input id="photo" type="file" accept="image/*" multiple hidden>
+      </label>
+      <p id="upload-status" class="muted"></p>
+      <div id="items" class="grid"></div>
+    </section>
+
+    <p class="muted small">Your photos and wardrobe stay on this device. The tagging AI runs in your browser.</p>
+  </main>
+
+  <dialog id="editor">
+    <form method="dialog" id="edit-form">
+      <!-- Pressing Enter submits the first button, so make that Save. -->
+      <button value="save" hidden></button>
+      <img id="edit-photo" alt="">
+      <label>Name <input name="name" required></label>
+      <label>Category
+        <select name="category">
+          <option>top</option><option>bottom</option><option>dress</option>
+          <option>outerwear</option><option>shoes</option><option>accessory</option>
+        </select>
+      </label>
+      <label>Colour <input name="colour"></label>
+      <label>Warmth
+        <select name="warmth">
+          <option value="1">1 · light</option><option value="2">2 · medium</option><option value="3">3 · warm</option>
+        </select>
+      </label>
+      <label>Formality
+        <select name="formality"><option>casual</option><option>smart</option><option>sporty</option></select>
+      </label>
+      <label class="check"><input type="checkbox" name="waterproof"> Waterproof</label>
+      <label class="check"><input type="checkbox" name="inWash"> In the wash</label>
+      <div class="actions">
+        <button value="delete" class="danger">Delete</button>
+        <button value="cancel">Cancel</button>
+        <button value="save" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
