@@ -8,7 +8,7 @@ import * as store from "./store.js";
 import * as weather from "./weather.js";
 import * as gemma from "./gemma.js";
 import {
-  parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, gapsOnly, fillPlan, choose,
+  parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, gapsOnly, fillPlan, askedFor, choose,
   SYSTEM, planPrompt, itemAdvicePrompt, chatPrompt, fallbackAdvice, cleanAdvice, adviceFits, SYMBOL,
 } from "./shop.js";
 
@@ -86,9 +86,10 @@ async function shop(message, items, status) {
   const amount = budget?.amount ?? null;
   const needs = shoppingNeeds(items, weather.lastSaved()).map((n) => ({ ...n, query: forWho(n.query, who.value) }));
 
-  let plan = [];
+  // "Shoes under €50": search for exactly what was asked, without Gemma guessing gaps.
+  let plan = askedFor(message).map((q) => ({ query: forWho(q, who.value), max: amount, why: "" }));
   let gemmaError = null;
-  try {
+  if (!plan.length) try {
     const text = await gemma.ask(SYSTEM, planPrompt({ message, items, needs, budget: amount, currency, who: who.value }),
       { maxTokens: 80, onProgress: (m) => (status.textContent = m) });
     plan = gapsOnly(message, needs)

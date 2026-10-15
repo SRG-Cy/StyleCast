@@ -116,3 +116,11 @@ test("drops a closing question from Gemma's advice", () => {
   assert.equal(cleanAdvice("Good picks! Want more? Or something else?"), "Good picks!");
   assert.equal(cleanAdvice("What colour do you like?"), "What colour do you like?");
 });
+
+test("searches for the clothes a request names", async () => {
+  const { askedFor } = await import("../js/shop.js");
+  assert.deepEqual(askedFor("shoes under 20 euros"), ["shoes"]);
+  assert.deepEqual(askedFor("I need smart black shoes under €60"), ["smart black shoes"]);
+  assert.deepEqual(askedFor("a rain jacket and some jeans for 80 euro"), ["rain jacket", "jeans"]);
+  assert.deepEqual(askedFor("I have 50 euro, what should I buy?"), []);
+});
