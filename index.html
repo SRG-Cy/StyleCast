@@ -12,15 +12,21 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="StyleCast">
+  <meta property="og:title" content="StyleCast: an outfit for today's weather">
+  <meta property="og:description" content="Photograph your wardrobe once and get an outfit for the real forecast. The AI runs on your phone; photos never leave it.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <link rel="preload" href="fonts/dm-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="sky-cloud">
+  <a class="skip" href="#main">Skip to content</a>
   <header class="top">
     <img class="logo" src="icons/logo.svg" alt="" width="40" height="40">
-    <span class="wordmark">stylecast</span>
+    <span class="wordmark" translate="no">stylecast</span>
   </header>
 
-  <main>
+  <main id="main">
     <div id="install" class="install sticker" hidden>
       <span id="install-text">Add StyleCast to your home screen for one-tap outfits.</span>
       <button id="install-btn" class="btn small" hidden>Install</button>
@@ -28,6 +34,7 @@
     </div>
 
     <section id="today" class="panel">
+      <h1 class="sr-only">Today's outfit</h1>
       <div class="hero">
         <div id="temp" class="temp">–°</div>
         <div class="sticker weather-card">
@@ -50,7 +57,7 @@
           </button>
         </div>
         <div id="outfit" class="outfit"></div>
-        <p id="reason"></p>
+        <p id="reason" aria-live="polite"></p>
         <button id="start" class="btn sun" type="button" hidden>Add your clothes</button>
       </div>
 
@@ -110,12 +117,12 @@
           <button type="button" class="chip">What goes with my jeans?</button>
         </div>
         <form id="chat-form" class="chat-form">
-          <input id="chat-input" autocomplete="off" placeholder="I have €50, what should I buy?" aria-label="Message">
+          <input id="chat-input" name="message" autocomplete="off" enterkeyhint="send" placeholder="I have €50, what should I buy…" aria-label="Message">
           <button id="chat-send" class="btn sun send" aria-label="Send">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
           </button>
         </form>
-        <p class="note">Gemma runs on this phone and downloads once, so use Wi-Fi the first time. Only words like "rain jacket" go to the shopping server. Shop links may earn StyleCast a small commission.</p>
+        <p class="note">Gemma runs on this phone and downloads once, so use Wi-Fi the first time. Only words like “rain jacket” go to the shopping server. Shop links may earn StyleCast a small commission.</p>
       </div>
     </section>
 

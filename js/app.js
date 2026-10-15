@@ -22,11 +22,14 @@ function photoUrl(item) {
 }
 
 function card(item) {
-  const el = document.createElement("div");
+  // A real button, so the item editor opens from the keyboard too.
+  const el = document.createElement("button");
+  el.type = "button";
   el.className = "card" + (item.inWash ? " washing" : "");
-  el.innerHTML = `<img alt=""><div class="info"><div></div><div class="tags"></div></div>`;
+  el.innerHTML = `<img alt="" width="256" height="256" loading="lazy"><span class="info"><span class="name"></span><span class="tags"></span></span>`;
   el.querySelector("img").src = photoUrl(item);
-  el.querySelector(".info div").textContent = item.name;
+  el.querySelector(".name").textContent = item.name;
+  el.setAttribute("aria-label", `Edit ${item.name}`);
   el.querySelector(".tags").textContent = [
     CATEGORY[item.category] ?? item.category, WARMTH[item.warmth], item.waterproof && "waterproof", item.inWash && "in the wash",
   ].filter(Boolean).join(" · ");
@@ -39,7 +42,7 @@ async function loadItems() {
   const box = $("#items");
   const shown = filter ? items.filter((i) => i.category === filter) : items;
   box.replaceChildren(...shown.map(card));
-  if (!items.length) box.innerHTML = '<p>No clothes yet. Tap "Snap new clothes" to photograph your first item, or add the sample clothes.</p>';
+  if (!items.length) box.innerHTML = "<p>No clothes yet. Tap “Snap new clothes” to photograph your first item, or add the sample clothes.</p>";
   else if (!shown.length) box.innerHTML = "<p>Nothing in this category yet.</p>";
   const washing = items.filter((i) => i.inWash).length;
   $("#count").textContent = items.length ? `${items.length} item${items.length === 1 ? "" : "s"}${washing ? ` · ${washing} in the wash` : ""}` : "";
@@ -147,20 +150,31 @@ function gapItem(text) {
 
 const occasion = () => document.querySelector('input[name="occasion"]:checked').value;
 
+// Sticker-shaped placeholders while the forecast loads.
+function skeleton() {
+  return Array.from({ length: 4 }, () => Object.assign(document.createElement("div"), { className: "card skeleton" }));
+}
+
 async function showOutfit() {
   const btn = $("#get-outfit");
   btn.disabled = true;
+  if (!$("#outfit").children.length && (await store.all()).length) $("#outfit").replaceChildren(...skeleton());
   try {
     items = await store.all();
     const w = await weather.today(await weather.position());
     const chosen = pick(items, w, occasion());
     lastOutfit = { ids: chosen.map((i) => i.id), date: w.date };
     document.body.className = `sky-${sky(w)}`;
+    // Match the phone's status bar to the new sky.
+    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.body).getPropertyValue("--sky-top").trim();
     $("#temp").textContent = `${Math.round(w.tempMax)}°`;
     $("#summary").textContent = w.summary;
     $("#weather").textContent = `Low ${Math.round(w.tempMin)}° · ${w.rainChance}% rain · wind ${Math.round(w.windKmh)} km/h` +
       (w.offline ? ` (offline: saved forecast for ${w.date})` : "");
     $("#outfit").replaceChildren(...chosen.map(card));
+    $("#outfit").classList.remove("enter");
+    void $("#outfit").offsetWidth; // restart the entry animation
+    $("#outfit").classList.add("enter");
     $("#reason").textContent = reason(chosen, w);
     // With an empty wardrobe the only useful step is adding clothes, so skip the gap list.
     $("#gaps").replaceChildren(...(items.length ? gaps(items, w).map(gapItem) : []));
@@ -168,7 +182,8 @@ async function showOutfit() {
     $("#wear").hidden = !chosen.length;
   } catch (err) {
     console.error(err);
-    $("#reason").textContent = err.message;
+    $("#outfit").querySelectorAll(".skeleton").forEach((el) => el.remove());
+    $("#reason").textContent = `${err.message} Tap the refresh button to try again.`;
   } finally {
     btn.disabled = false;
   }

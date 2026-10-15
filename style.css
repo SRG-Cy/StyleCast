@@ -5,7 +5,7 @@
 @font-face { font-family: "Unbounded"; src: url(fonts/unbounded.woff2) format("woff2"); font-weight: 200 900; font-display: swap; }
 
 :root {
-  --ink: #141414; --card: #ffffff; --text: #141414; --muted: #4a4a4a;
+  --ink: #151a24; --card: #ffffff; --text: #141414; --muted: #4a4a4a;
   --sage: #2f5d50; --sage-text: #ffffff; --sun: #f4b740; --danger: #a33a2c;
   --sky-top: #6f8fb4; --sky-bottom: #c3d3e4;
   --line: 2.5px solid var(--ink); --lift: 4px 4px 0 var(--ink);
@@ -21,7 +21,7 @@ body.sky-cold  { --sky-top: #5b7fb0; --sky-bottom: #dfe9f5; }
 body.sky-storm { --sky-top: #3b4a63; --sky-bottom: #7f8ea6; }
 
 @media (prefers-color-scheme: dark) {
-  :root { --ink: #000000; --card: #1f2329; --text: #f1f0ec; --muted: #b8bcc2;
+  :root { --ink: #07090d; --card: #1f2329; --text: #f1f0ec; --muted: #b8bcc2;
           --sage: #5fa58e; --sage-text: #0b1a15; --sun: #f4b740; --danger: #ff8a78; color-scheme: dark; }
   body.sky-rain  { --sky-top: #1b2b44; --sky-bottom: #33507a; }
   body.sky-cloud { --sky-top: #222b38; --sky-bottom: #44536a; }
@@ -31,12 +31,24 @@ body.sky-storm { --sky-top: #3b4a63; --sky-bottom: #7f8ea6; }
 }
 
 * { box-sizing: border-box; }
-html { background: var(--sky-bottom); }
+html { background: var(--sky-bottom); -webkit-tap-highlight-color: transparent; }
 body {
   margin: 0; min-height: 100dvh; font: 16px/1.45 var(--body); color: var(--text);
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%) fixed;
-  transition: background 0.6s ease;
+  /* A soft glow where the sun (or the brightest cloud) sits, over the sky's top-to-bottom fade. */
+  background:
+    radial-gradient(120% 60% at 85% -10%, color-mix(in srgb, #fff 28%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%) fixed;
+  touch-action: manipulation;
 }
+/* Fine grain so the sky reads as air, not a flat fill. */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.07; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+h1, h2 { text-wrap: balance; }
+p { text-wrap: pretty; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 12px; top: -60px; z-index: 20; padding: 10px 14px; background: var(--card); color: var(--text);
+  border: var(--line); border-radius: 12px; font-weight: 700; }
+.skip:focus { top: 12px; }
 button, select, input, .btn { font: inherit; color: inherit; }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
@@ -54,8 +66,14 @@ main { max-width: 560px; margin: 0 auto; padding: 8px 16px calc(96px + env(safe-
 .sticker { background: var(--card); border: var(--line); border-radius: var(--radius); box-shadow: var(--lift); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 10px 16px;
   background: var(--card); border: var(--line); border-radius: 16px; box-shadow: var(--lift); font-weight: 700;
-  cursor: pointer; text-align: center; transition: transform 0.08s, box-shadow 0.08s; }
-.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  cursor: pointer; text-align: center; transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
+/* Stickers lift toward you on hover and press flat when tapped. */
+@media (hover: hover) {
+  .btn:hover, .card:hover, .tab:not(.active):hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+  .pill span:hover, .pill-btn:hover, .chip:hover, .go-shop:hover { background: color-mix(in srgb, var(--sun) 30%, var(--card)); }
+  .pill input:checked + span:hover, .pill-btn[aria-pressed="true"]:hover { background: var(--ink); }
+}
+.btn:active, .card:active, .tab:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
 .btn:disabled { opacity: 0.6; cursor: progress; }
 .btn.primary { background: var(--sage); color: var(--sage-text); width: 100%; min-height: 54px; font-size: 1.05rem; }
 .btn.sun { background: var(--sun); color: #141414; }
@@ -80,7 +98,7 @@ main { max-width: 560px; margin: 0 auto; padding: 8px 16px calc(96px + env(safe-
 
 /* Today */
 .hero { display: flex; align-items: center; gap: 14px; }
-.temp { font: 800 4.6rem/1 var(--display); color: #fff; text-shadow: 4px 4px 0 var(--ink); letter-spacing: -0.04em; }
+.temp { font: 800 4.6rem/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; text-shadow: 4px 4px 0 var(--ink); letter-spacing: -0.04em; }
 .weather-card { flex: 1; min-width: 0; padding: 10px 14px; transform: rotate(2deg); }
 .summary { font: 700 1.15rem/1.2 var(--display); text-transform: capitalize; }
 #weather { margin: 2px 0 0; font-size: 0.9rem; font-weight: 500; }
@@ -91,11 +109,23 @@ main { max-width: 560px; margin: 0 auto; padding: 8px 16px calc(96px + env(safe-
 @keyframes spin { to { transform: rotate(360deg); } }
 .outfit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; padding: 4px 2px; }
 .outfit:empty { display: none; }
-.outfit .card { transform: rotate(-3deg); }
+.outfit .card { --r: -3deg; transform: rotate(var(--r)); }
+.outfit .card:nth-child(even) { --r: 3deg; }
+.outfit .card:nth-child(3n) { --r: -1.5deg; }
 .outfit .card img { aspect-ratio: 4 / 3; }
 .outfit .card .tags { display: none; }
-.outfit .card:nth-child(even) { transform: rotate(3deg); }
-.outfit .card:nth-child(3n) { transform: rotate(-1.5deg); }
+@media (hover: hover) { .outfit .card:hover { transform: rotate(0deg) translate(-1px, -1px); } }
+/* Each sticker drops in a beat after the last. */
+.outfit.enter .card { animation: drop 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+.outfit.enter .card:nth-child(2) { animation-delay: 0.06s; }
+.outfit.enter .card:nth-child(3) { animation-delay: 0.12s; }
+.outfit.enter .card:nth-child(4) { animation-delay: 0.18s; }
+.outfit.enter .card:nth-child(5) { animation-delay: 0.24s; }
+@keyframes drop { from { opacity: 0; transform: translateY(-14px) rotate(calc(var(--r) * 3)); } to { opacity: 1; transform: rotate(var(--r)); } }
+.skeleton { aspect-ratio: 4 / 3.9; box-shadow: none; border-style: dashed; cursor: default;
+  background: linear-gradient(100deg, var(--card) 40%, color-mix(in srgb, var(--sky-bottom) 35%, var(--card)) 50%, var(--card) 60%) 0 0 / 200% 100%;
+  animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
 #reason { margin: 0; font-size: 0.95rem; }
 #reason:empty { display: none; }
 .gaps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -114,12 +144,14 @@ main { max-width: 560px; margin: 0 auto; padding: 8px 16px calc(96px + env(safe-
 .status:empty { display: none; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
 .grid > p { grid-column: 1 / -1; margin: 0; padding: 14px; background: var(--card); border: var(--line); border-radius: var(--radius); }
-.card { position: relative; display: flex; flex-direction: column; background: var(--card); border: var(--line);
-  border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); overflow: hidden; cursor: pointer; }
-.card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; border-bottom: 2px solid var(--ink); background: #ebe7e1; }
-.card .info { padding: 6px 8px 8px; font-size: 0.82rem; font-weight: 700; line-height: 1.2; }
-.card .info div:first-child::first-letter { text-transform: uppercase; }
-.card .tags { color: var(--muted); font-size: 0.75rem; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card { position: relative; display: flex; flex-direction: column; width: 100%; padding: 0; text-align: left; font: inherit; color: var(--text);
+  background: var(--card); border: var(--line); border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); overflow: hidden; cursor: pointer;
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
+.card img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; display: block; border-bottom: 2px solid var(--ink); background: #ebe7e1; }
+.card .info { display: block; min-width: 0; padding: 6px 8px 8px; font-size: 0.82rem; font-weight: 700; line-height: 1.2; }
+.card .name { display: block; overflow-wrap: anywhere; }
+.card .name::first-letter { text-transform: uppercase; }
+.card .tags { display: block; color: var(--muted); font-size: 0.75rem; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card.washing img { opacity: 0.45; }
 .snap { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom)); width: 100%; min-height: 54px; font-size: 1.05rem; margin-top: 4px; }
 
@@ -172,7 +204,7 @@ select, input:not([type=checkbox]):not([type=radio]) { width: 100%; min-height: 
 @media (prefers-color-scheme: dark) { .tab.active { background: var(--text); color: #141414; } }
 
 /* Item editor */
-dialog { border: var(--line); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); background: var(--card); color: var(--text);
+dialog { overscroll-behavior: contain; border: var(--line); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); background: var(--card); color: var(--text);
   width: min(420px, calc(100vw - 32px)); padding: 16px; }
 dialog::backdrop { background: rgb(20 20 20 / 0.45); }
 dialog form { display: grid; gap: 10px; }
@@ -185,7 +217,7 @@ dialog img { width: 100%; max-height: 220px; object-fit: contain; border-radius:
 .actions .primary { width: auto; min-height: 44px; }
 
 @media (prefers-reduced-motion: reduce) {
-  body { transition: none; }
   .outfit .card, .weather-card { transform: none !important; }
-  #get-outfit:disabled svg { animation: none; }
+  .outfit.enter .card, .skeleton, #get-outfit:disabled svg { animation: none !important; }
+  .btn, .card, .tab { transition: none; }
 }
