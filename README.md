@@ -4,6 +4,15 @@ Photograph your wardrobe once. Every morning, get an outfit from your own clothe
 
 Built for the DEV Hacktoberfest 2026 Open-Source AI Challenge, Week 2 ("Side Hustle").
 
+<p>
+  <img src="docs/screenshots/today-rain.png" width="200" alt="Today on a rainy day: 13 degrees under the curtain-red header, and an outfit of denim jacket, hoodie, jeans and trainers in an arched mirror">
+  <img src="docs/screenshots/today-sunny.png" width="200" alt="Today on a sunny day: 22 degrees, and a t-shirt, shorts and trainers in the mirror">
+  <img src="docs/screenshots/wardrobe.png" width="200" alt="The wardrobe, with each category hanging on its own brass rail">
+  <img src="docs/screenshots/shop.png" width="200" alt="The Shop chat with country and who-for settings">
+</p>
+
+Today's outfit stands in a fitting-room mirror under the forecast; the wardrobe hangs on rails, one per category.
+
 ## What it does
 
 - **Wardrobe scan:** snap each item. An open model running in your browser tags type, colour, warmth, waterproofing and formality. Every tag is editable.
