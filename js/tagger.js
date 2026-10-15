@@ -48,10 +48,14 @@ async function load(onProgress) {
   if (classifier) return classifier;
   lib ??= await import(TRANSFORMERS);
   lib.env.allowLocalModels = false;
-  const gpu = !!navigator.gpu && !!(await navigator.gpu.requestAdapter().catch(() => null));
+  // Phones get the 8-bit model on WebAssembly: the full-size one on WebGPU used more memory than
+  // iPhone Safari allows a tab, and Safari reloaded the page ("A problem repeatedly occurred").
+  const phone = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  const gpu = !phone && !!navigator.gpu && !!(await navigator.gpu.requestAdapter().catch(() => null));
   const files = {};
   classifier = await lib.pipeline("zero-shot-image-classification", MODEL, {
     device: gpu ? "webgpu" : "wasm",
+    dtype: gpu ? "fp32" : "q8",
     progress_callback: (p) => {
       if (p.status !== "progress" || !p.total) return;
       files[p.file] = [p.loaded, p.total];

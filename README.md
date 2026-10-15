@@ -29,7 +29,7 @@ A chat forgets your wardrobe the moment you close it. StyleCast remembers every 
 
 There's nothing to install and no account. Open the link on your phone, photograph your clothes, done.
 
-- The tagging AI runs on your phone or laptop (WebGPU when available, otherwise WebAssembly). The model downloads once (about 150 MB) and the browser keeps it.
+- The tagging AI runs on your phone or laptop (WebGPU on computers that have it; WebAssembly with the 8-bit model on phones, which keeps it within mobile memory limits). The model downloads once (about 150 MB) and the browser keeps it.
 - Photos and the wardrobe are stored in your browser (IndexedDB). Nothing is uploaded, and there is no server to pay for.
 - The forecast comes from Open-Meteo, called straight from the browser.
 - The budget chat uses Gemma, also running on your device. Only short search words like "rain jacket" (and a price cap) go to StyleCast's small shopping server, which asks Google Shopping through SerpApi. Photos and the wardrobe list never leave the device.
