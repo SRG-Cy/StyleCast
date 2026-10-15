@@ -4,33 +4,38 @@ Deadline: Sat Oct 18, 11:59 PM PDT.
 
 ## Scope (locked)
 
-In: wardrobe photo upload + auto-tagging, editable tags, daily outfit from forecast + occasion, wear history and "in the wash", wardrobe gap tips, thumbs up/down feedback.
+In: wardrobe photo upload + auto-tagging, editable tags, daily outfit from forecast + occasion, wear history and "in the wash", wardrobe gap tips, thumbs up/down feedback, install to the home screen, offline use.
 
-Out: virtual try-on, images of you wearing outfits, accounts/login, shopping integration.
-
-## Day by day
-
-| Day | Goal |
-|---|---|
-| Tue Oct 14 | Repo, stack set up, Ollama running Qwen2.5-VL. Test tagging speed and accuracy on 10 real photos. Decide 7B vs 3B. |
-| Wed Oct 15 | Wardrobe: upload, tag to JSON, editable grid, saved locally. Multi-item photo splitting if time allows. |
-| Thu Oct 16 | Outfit engine: Open-Meteo forecast + occasion + wardrobe -> outfit with a one-line reason. Wear history, "in the wash", no repeats. |
-| Fri Oct 17 | Gap spotting, thumbs up/down, mobile-first polish. Test with 30+ real items. |
-| Sat Oct 18 | README, screenshots, 60-second demo video/GIF, DEV post with the side-hustle pricing story. Submit. |
+Out: virtual try-on, images of you wearing outfits, accounts/login, shopping integration, multi-item photos (the in-browser tagger reads one item per photo), a native Android or iPhone app (the installable web app covers it).
 
 ## Stack (changed Oct 15: everything runs in the browser)
 
-- Static web app, mobile-first, no build step; hostable on GitHub Pages
-- Tagging: CLIP zero-shot via Transformers.js (WebGPU, falling back to WebAssembly)
+- Static web app, mobile-first, no build step, hosted on GitHub Pages
+- Tagging: CLIP zero-shot via Transformers.js (WebGPU, falling back to WebAssembly); the model downloads once (about 150 MB)
 - Storage: IndexedDB in the user's browser; photos never leave the device
 - Outfit picking: rules in JavaScript (weather, occasion, wear history)
-- Weather: Open-Meteo, called from the browser
+- Weather: Open-Meteo, called from the browser; the last forecast is kept for offline use
+- Installable web app: manifest, icons and a service worker, so it goes on the home screen, opens full screen and works offline
 
 The first version used a Python server with Ollama (Qwen2.5-VL). It was dropped because users would have had to install Ollama and a 6 GB model.
 
+## Day by day
+
+| Day | Goal | Status |
+|---|---|---|
+| Tue Oct 14 | Repo, first version (Python server + Ollama) | Done, then replaced |
+| Wed Oct 15 | Rebuild in the browser: wardrobe, tagging, outfits, wear history, "in the wash", gap tips. Make it installable and offline. | Done (merged in #2) |
+| Thu Oct 16 | Turn on GitHub Pages. Test on a real Android phone and iPhone. Measure tagging speed and accuracy on 10+ real photos with `browser-test.html`; switch to SmolVLM if CLIP is too often wrong. | To do |
+| Fri Oct 17 | Thumbs up/down on outfits, polish from the phone test, test with 30+ real items. | To do |
+| Sat Oct 18 | README, screenshots, 60-second demo video/GIF, DEV post with the side-hustle pricing story and the numbers. Submit. | To do |
+
+## Numbers to collect for the post
+
+Seconds per photo (phone and laptop), tag accuracy on real photos, model download size, and a rough cost comparison with a paid vision API (StyleCast costs nothing per user to run, since the AI runs on the user's device).
+
 ## Biggest risks
 
-1. Setup effort of photographing many items -> allow multi-item photos, start with 10 items.
-2. Tag accuracy of a small in-browser model -> measure with browser-test.html; one-tap edits; SmolVLM as a stronger option.
-3. Tag mistakes -> one-tap edits.
+1. Tag accuracy of a small in-browser model -> measure on Thursday; one-tap edits; SmolVLM as a stronger option.
+2. Slow or failing AI on older phones -> WebAssembly fallback; test on a real phone Thursday.
+3. Setup effort of photographing many items -> start with 10 items; batch upload from the gallery.
 4. Generic picks -> thumbs up/down shapes future choices.
