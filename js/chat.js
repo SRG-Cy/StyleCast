@@ -109,7 +109,9 @@ async function shop(message, items, status) {
   const slow = setTimeout(() => (status.textContent = "Waking up the shopping server (it naps when nobody's using it)…"), 4000);
   let groups;
   try {
-    groups = await Promise.all(plan.map(async (need) => ({ need, results: await search(need.query, need.max, gl) })));
+    // Each search may use the whole budget; choose() then keeps the total within it. Capping each
+    // item at Gemma's share found nothing for €20, though a €16 rain jacket was there.
+    groups = await Promise.all(plan.map(async (need) => ({ need, results: await search(need.query, amount ?? need.max, gl) })));
   } finally {
     clearTimeout(slow);
   }

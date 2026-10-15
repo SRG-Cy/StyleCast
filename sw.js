@@ -5,7 +5,7 @@
 // - The model files from Hugging Face are cached by Transformers.js itself.
 // - The weather and shopping searches are never cached here.
 
-const APP = "stylecast-app-v9";
+const APP = "stylecast-app-v10";
 const LIBS = "stylecast-libs-v1";
 const SHELL = [
   "./", "index.html", "style.css", "manifest.webmanifest",
