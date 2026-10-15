@@ -119,7 +119,9 @@ export function advicePrompt({ message, items, picks, total, budget, currency })
     `My wardrobe:\n${wardrobeSummary(items)}`,
     `My request: ${message}`,
     `The app found these items${budget ? `, ${sym}${total} in total out of ${sym}${budget}` : ""}:\n${lines.join("\n")}`,
-    "In 2 to 4 short sentences, tell me why these are good buys and name one or two things I already own that each one goes with. " +
+    (items.length
+      ? "In 2 to 4 short sentences, tell me why these are good buys and name one or two things I already own that each one goes with. "
+      : "My wardrobe is empty, so don't mention anything I own. In 2 to 3 short sentences, tell me why these are good first buys. ") +
       "Only talk about the items listed. Don't invent prices or other products.",
   ].join("\n\n");
 }

@@ -68,3 +68,10 @@ test("keeps the picks within budget", () => {
   assert.ok(total <= 50);
   assert.match(fallbackAdvice(picks, total, 50, "EUR"), /€42 of your €50/);
 });
+
+test("doesn't ask Gemma to pair with clothes when the wardrobe is empty", async () => {
+  const { advicePrompt } = await import("../js/shop.js");
+  const picks = [{ title: "Jacket", price: "€20", source: "Shop", need: { query: "rain jacket", why: "" } }];
+  assert.match(advicePrompt({ message: "€50", items: [], picks, total: 20, budget: 50, currency: "EUR" }), /wardrobe is empty/);
+  assert.match(advicePrompt({ message: "€50", items: [item("tee", "top")], picks, total: 20, budget: 50, currency: "EUR" }), /things I already own/);
+});
