@@ -64,16 +64,40 @@ export function forWho(query, who) {
   return who && who !== "any" && !/\b(men|women|kids)/i.test(query) ? `${who} ${query}` : query;
 }
 
+// A search must name a piece of clothing; small models sometimes echo instructions instead.
+const CLOTHING = /\b(t-?shirts?|tees?|tops?|shirts?|blouses?|jumpers?|sweaters?|hoodies?|cardigans?|jeans|trousers|chinos|pants|shorts|skirts?|leggings|dress(es)?|jackets?|coats?|parkas?|blazers?|raincoats?|fleeces?|gilets?|trainers|sneakers|boots|shoes|sandals|loafers|scarf|scarves|hats?|beanies?|gloves|bags?|belts?|socks)\b/i;
+
+// When the request names no clothing ("I have €50"), Gemma picks from the gaps the app found,
+// so a small model can't suggest things already owned. "Smart shoes under €60" lets it choose freely.
+export const gapsOnly = (message, needs) => needs.length > 0 && !CLOTHING.test(message);
+
+const core = (q) => q.replace(/^(men|women|kids)\s+/i, "").toLowerCase();
+const lastWord = (q) => q.split(" ").at(-1).replace(/s$/, "");
+
+// The need a planned search refers to: "warm jumper" or "rain jacket for men" both count.
+function matchNeed(query, needs) {
+  return needs.find((n) => query.includes(core(n.query)))
+    ?? needs.find((n) => lastWord(core(n.query)) === lastWord(query));
+}
+
 // Gemma's search plan comes back as lines like "rain jacket | 40". Anything else is ignored.
-export function parsePlan(text, budget) {
+// With needs given, only searches for those gaps are kept, under the gap's own name.
+export function parsePlan(text, budget, needs = null) {
   const plan = [];
   for (const line of text.split("\n")) {
     const m = line.match(/^[\s\-*\d.)]*([\p{L}' -]{2,60}?)\s*\|\s*[€£$₹]?\s*(\d+(?:\.\d+)?)/u);
     if (!m) continue;
-    const query = m[1].replace(/\s+/g, " ").trim().toLowerCase();
-    if (query.split(" ").length > 6 || plan.some((p) => p.query === query)) continue;
+    let query = m[1].replace(/\s+/g, " ").trim().toLowerCase();
+    if (!CLOTHING.test(query) || query.split(" ").length > 6) continue;
+    let why = "";
+    if (needs) {
+      const need = matchNeed(query, needs);
+      if (!need) continue;
+      ({ query, why } = need);
+    }
+    if (plan.some((p) => p.query === query)) continue;
     const max = Number(m[2]);
-    plan.push({ query, max: budget ? Math.min(max, budget) : max, why: "" });
+    plan.push({ query, max: budget ? Math.min(max, budget) : max, why });
     if (plan.length === 3) break;
   }
   return plan;
@@ -101,29 +125,65 @@ export const SYSTEM = "You are StyleCast, a friendly wardrobe assistant inside a
   "You only help with clothes, outfits and shopping for clothes. Keep answers short and practical.";
 
 export function planPrompt({ message, items, needs, budget, currency, who }) {
+  const onlyGaps = gapsOnly(message, needs);
   return [
     `My wardrobe:\n${wardrobeSummary(items)}`,
     needs.length ? `Gaps the app found:\n${needs.map((n) => `- ${n.query}: ${n.why}`).join("\n")}` : "",
     budget ? `Budget: ${budget} ${currency}` : "",
     who && who !== "any" ? `Shopping for: ${who}` : "",
     `My request: ${message}`,
-    "Plan up to 3 Google Shopping searches that would improve my wardrobe most for this request.",
-    "Reply ONLY with lines in this form, nothing else:\nsearch words | max price",
+    onlyGaps
+      ? "Choose up to 3 of the gaps above that would improve my wardrobe most, most important first. Use the gap names exactly as written."
+      : "Plan up to 3 Google Shopping searches for clothes I don't own yet that would improve my wardrobe most for this request.",
+    "Reply ONLY with lines like the example: the item to search for, a | sign, and the most to spend on it. No other text.",
+    `Example:\n${exampleLines(needs, budget)}`,
   ].filter(Boolean).join("\n\n");
 }
 
-export function advicePrompt({ message, items, picks, total, budget, currency }) {
-  const sym = SYMBOL[currency] ?? "";
-  const lines = picks.map((p) => `- ${p.title}, ${p.price} from ${p.source} (for: ${p.need.query}${p.need.why ? `; ${p.need.why}` : ""})`);
+function exampleLines(needs, budget) {
+  const ex = needs.length ? needs.slice(0, 2).map((n) => n.query) : ["rain jacket", "white trainers"];
+  const each = budget ? Math.round(budget / ex.length) : 40;
+  return ex.map((q) => `${q} | ${each}`).join("\n");
+}
+
+// One short question per item: Gemma 3 1B mixes up "new" and "owned" when asked about several at once.
+export function itemAdvicePrompt({ items, pick }) {
+  const owned = items.slice(0, 40).map((i) => i.name).join(", ");
   return [
-    `My wardrobe:\n${wardrobeSummary(items)}`,
-    `My request: ${message}`,
-    `The app found these items${budget ? `, ${sym}${total} in total out of ${sym}${budget}` : ""}:\n${lines.join("\n")}`,
-    (items.length
-      ? "In 2 to 4 short sentences, tell me why these are good buys and name one or two things I already own that each one goes with. "
-      : "My wardrobe is empty, so don't mention anything I own. In 2 to 3 short sentences, tell me why these are good first buys. ") +
-      "Only talk about the items listed. Don't invent prices or other products.",
+    items.length ? `Clothes I already own: ${owned}.` : "I don't own any clothes in the app yet.",
+    `I'm buying a new ${pick.need.query}.${pick.need.why ? ` ${pick.need.why}` : ""}`,
+    items.length
+      ? `In one sentence, say why a ${pick.need.query} is a good buy and which one or two of the clothes I own it goes with.`
+      : `In one sentence, say why a ${pick.need.query} is a good first buy.`,
+    "Don't mention prices.",
   ].join("\n\n");
+}
+
+// Gemma chooses the most important gaps; any it leaves out are still searched with the money left,
+// so a €50 budget isn't spent on one €14 item.
+export function fillPlan(plan, needs, budget) {
+  const out = [...plan];
+  const planned = plan.reduce((s, p) => s + (p.max ?? 0), 0);
+  const left = budget ? Math.max(budget - planned, Math.round(budget * 0.4)) : null;
+  for (const n of needs) {
+    if (out.length === 3) break;
+    if (!out.some((p) => p.query === n.query)) out.push({ ...n, max: left });
+  }
+  return out;
+}
+
+// Remove any prices Gemma writes anyway (the app shows the real ones on the product cards), and a
+// closing question like "Do you want to explore other options?", since the app can't follow it up.
+export function cleanAdvice(text) {
+  const t = text.replace(/\s*\(?\s*[€£$₹]\s?\d+(?:[.,]\d+)?\)?/g, "").replace(/[ \t]{2,}/g, " ").replace(/ +([.,!?])/g, "$1").trim();
+  const trimmed = t.replace(/(?:\s*[^.!?\n]*\?)+$/, "").trim();
+  return trimmed || t;
+}
+
+// Use Gemma's advice only if it talks about at least one of the things being bought.
+export function adviceFits(text, picks) {
+  const t = text.toLowerCase();
+  return picks.some((p) => t.includes(p.need.query.split(" ").at(-1).toLowerCase()));
 }
 
 export function chatPrompt({ message, items }) {

@@ -8,8 +8,8 @@ import * as store from "./store.js";
 import * as weather from "./weather.js";
 import * as gemma from "./gemma.js";
 import {
-  parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, choose,
-  SYSTEM, planPrompt, advicePrompt, chatPrompt, fallbackAdvice, SYMBOL,
+  parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, gapsOnly, fillPlan, choose,
+  SYSTEM, planPrompt, itemAdvicePrompt, chatPrompt, fallbackAdvice, cleanAdvice, adviceFits, SYMBOL,
 } from "./shop.js";
 
 const params = new URLSearchParams(location.search);
@@ -91,10 +91,12 @@ async function shop(message, items, status) {
   try {
     const text = await gemma.ask(SYSTEM, planPrompt({ message, items, needs, budget: amount, currency, who: who.value }),
       { maxTokens: 80, onProgress: (m) => (status.textContent = m) });
-    plan = parsePlan(text, amount).map((p) => {
-      const query = forWho(p.query, who.value);
-      return { ...p, query, why: needs.find((n) => n.query === query)?.why ?? "" };
-    });
+    plan = gapsOnly(message, needs)
+      ? fillPlan(parsePlan(text, amount, needs), needs, amount)
+      : parsePlan(text, amount).map((p) => {
+        const query = forWho(p.query, who.value);
+        return { ...p, query, why: needs.find((n) => n.query === query)?.why ?? "" };
+      });
   } catch (err) {
     console.error(err);
     gemmaError = err.message ?? String(err);
@@ -115,13 +117,21 @@ async function shop(message, items, status) {
 
   let text = fallbackAdvice(picks, total, amount, currency);
   if (picks.length && !gemmaError) {
-    try {
-      text = await gemma.ask(SYSTEM, advicePrompt({ message, items, picks, total, budget: amount, currency }),
-        { onProgress: (m) => (status.textContent = m) });
-      if (amount) text += `\n\nTotal: ${SYMBOL[currency]}${total} of ${SYMBOL[currency]}${amount}.`;
-    } catch (err) {
-      console.error(err);
+    // One sentence from Gemma per item; the rules' reason stands in when it wanders off the item.
+    const lines = [];
+    for (const pick of picks) {
+      let line = pick.need.why || `You asked for ${pick.need.query}.`;
+      try {
+        const said = cleanAdvice(await gemma.ask(SYSTEM, itemAdvicePrompt({ items, pick }),
+          { maxTokens: 60, onProgress: (m) => (status.textContent = m) }));
+        if (adviceFits(said, [pick])) line = said;
+      } catch (err) {
+        console.error(err);
+      }
+      lines.push(line);
     }
+    text = lines.join("\n\n");
+    if (amount) text += `\n\nTotal: ${SYMBOL[currency]}${total} of ${SYMBOL[currency]}${amount}.`;
   }
   if (gemmaError) text = `(Gemma couldn't load, so these come from StyleCast's own rules. Reason: ${gemmaError})\n\n${text}`;
   return { text, picks };
@@ -145,7 +155,7 @@ $("#chat-form").addEventListener("submit", async (e) => {
       reply.textContent = text;
       if (picks.length) reply.append(...picks.map(productCard));
     } else {
-      reply.textContent = await gemma.ask(SYSTEM, chatPrompt({ message, items }), { onProgress: (m) => (reply.textContent = m) });
+      reply.textContent = cleanAdvice(await gemma.ask(SYSTEM, chatPrompt({ message, items }), { onProgress: (m) => (reply.textContent = m) }));
     }
   } catch (err) {
     console.error(err);
