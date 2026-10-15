@@ -59,6 +59,10 @@ npm test
 
 Runs the outfit rules with Node's built-in test runner (Node 20+). No packages to install.
 
+## Licence
+
+MIT. See [LICENSE](LICENSE).
+
 ## Status
 
 Under construction (Oct 14–18, 2026). See [PLAN.md](PLAN.md).
