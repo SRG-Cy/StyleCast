@@ -2,6 +2,7 @@ import * as store from "./store.js";
 import { tag } from "./tagger.js";
 import * as weather from "./weather.js";
 import { pick, gaps, reason, describe } from "./outfit.js";
+import { sampleItems } from "./samples.js";
 
 const $ = (sel) => document.querySelector(sel);
 let items = [];
@@ -33,7 +34,22 @@ async function loadItems() {
   const box = $("#items");
   box.replaceChildren(...items.map(card));
   if (!items.length) box.innerHTML = '<p class="muted">No clothes yet. Tap "Add clothes" to photograph your first item.</p>';
+  $("#samples").textContent = items.some((i) => i.sample) ? "Remove the sample clothes" : "Add sample clothes to try it out";
 }
+
+$("#samples").addEventListener("click", async () => {
+  const samples = items.filter((i) => i.sample);
+  if (samples.length) {
+    for (const item of samples) {
+      await store.remove(item.id);
+      URL.revokeObjectURL(photoUrls.get(item.id));
+      photoUrls.delete(item.id);
+    }
+  } else {
+    for (const item of await sampleItems(newId)) await store.put(item);
+  }
+  loadItems();
+});
 
 $("#photo").addEventListener("change", async (e) => {
   const files = [...e.target.files];

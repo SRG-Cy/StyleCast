@@ -87,7 +87,7 @@ async function shop(message, items, status) {
   const needs = shoppingNeeds(items, weather.lastSaved()).map((n) => ({ ...n, query: forWho(n.query, who.value) }));
 
   let plan = [];
-  let gemmaOk = true;
+  let gemmaError = null;
   try {
     const text = await gemma.ask(SYSTEM, planPrompt({ message, items, needs, budget: amount, currency, who: who.value }),
       { maxTokens: 80, onProgress: (m) => (status.textContent = m) });
@@ -97,7 +97,7 @@ async function shop(message, items, status) {
     });
   } catch (err) {
     console.error(err);
-    gemmaOk = false;
+    gemmaError = err.message ?? String(err);
   }
   // Without Gemma's plan, give the top need most of the money and leave room for a second item.
   if (!plan.length) plan = needs.slice(0, 3).map((n, i) => ({ ...n, max: amount && Math.round(amount * (i ? 0.4 : 0.6)) }));
@@ -114,7 +114,7 @@ async function shop(message, items, status) {
   const { picks, total } = choose(groups, amount);
 
   let text = fallbackAdvice(picks, total, amount, currency);
-  if (picks.length && gemmaOk) {
+  if (picks.length && !gemmaError) {
     try {
       text = await gemma.ask(SYSTEM, advicePrompt({ message, items, picks, total, budget: amount, currency }),
         { onProgress: (m) => (status.textContent = m) });
@@ -123,7 +123,7 @@ async function shop(message, items, status) {
       console.error(err);
     }
   }
-  if (!gemmaOk) text = `(Gemma couldn't load, so these come from StyleCast's own rules.)\n\n${text}`;
+  if (gemmaError) text = `(Gemma couldn't load, so these come from StyleCast's own rules. Reason: ${gemmaError})\n\n${text}`;
   return { text, picks };
 }
 
