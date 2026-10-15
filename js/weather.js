@@ -14,7 +14,23 @@ const CODES = {
 // Galway, used when the browser won't share a location.
 export const DEFAULT_PLACE = { lat: 53.2707, lon: -9.0568 };
 
-export async function today({ lat, lon } = DEFAULT_PLACE) {
+const SAVED = "stylecast-last-forecast";
+
+// The live forecast, or the last one saved on this device when offline (marked with offline: true).
+export async function today(place = DEFAULT_PLACE) {
+  try {
+    const w = await fetchToday(place);
+    try { localStorage.setItem(SAVED, JSON.stringify(w)); } catch {}
+    return w;
+  } catch (err) {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(SAVED)); } catch {}
+    if (saved) return { ...saved, offline: true };
+    throw navigator.onLine === false ? new Error("You're offline and there's no saved forecast yet.") : err;
+  }
+}
+
+async function fetchToday({ lat, lon }) {
   const params = new URLSearchParams({
     latitude: lat,
     longitude: lon,

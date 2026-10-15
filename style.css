@@ -38,3 +38,9 @@ dialog img { width: 100%; max-height: 220px; object-fit: contain; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; }
 .actions .primary { width: auto; }
 .small { font-size: 0.8rem; margin-top: 24px; text-align: center; }
+.install { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px; margin-bottom: 16px; font-size: 0.9rem; }
+.install span { flex: 1; }
+.install button { padding: 6px 12px; }
+#install-btn { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+#install-close { border: none; background: none; color: var(--muted); }

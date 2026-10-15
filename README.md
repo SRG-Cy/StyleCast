@@ -22,6 +22,7 @@ There's nothing to install and no account. Open the link on your phone, photogra
 - The tagging AI runs on your phone or laptop (WebGPU when available, otherwise WebAssembly). The model downloads once (about 150 MB) and the browser keeps it.
 - Photos and the wardrobe are stored in your browser (IndexedDB). Nothing is uploaded, and there is no server to pay for.
 - The forecast comes from Open-Meteo, called straight from the browser.
+- It installs like an app: on Android, tap "Install" (or Chrome's menu > Add to Home screen); on iPhone, Share > Add to Home Screen. It gets its own icon, opens full screen, and works offline after the first visit (using the last saved forecast).
 
 ## Open models
 

@@ -8,6 +8,9 @@ let items = [];
 let lastOutfit = null;
 const photoUrls = new Map();
 
+// crypto.randomUUID only exists on https and localhost; this also covers a plain-http address on the home Wi-Fi.
+const newId = () => crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
 function photoUrl(item) {
   if (!photoUrls.has(item.id)) photoUrls.set(item.id, URL.createObjectURL(item.photo));
   return photoUrls.get(item.id);
@@ -41,7 +44,7 @@ $("#photo").addEventListener("change", async (e) => {
       status.textContent = `Tagging photo ${n + 1} of ${files.length}…`;
       const photo = await store.shrink(file);
       const tags = await tag(photo, (msg) => (status.textContent = msg));
-      await store.put({ id: crypto.randomUUID(), added: Date.now(), photo, inWash: false, lastWorn: null, ...tags });
+      await store.put({ id: newId(), added: Date.now(), photo, inWash: false, lastWorn: null, ...tags });
       await loadItems();
     }
     status.textContent = "Done. Tap an item to fix any tags.";
@@ -94,7 +97,7 @@ $("#get-outfit").addEventListener("click", async () => {
     const w = await weather.today(await weather.position());
     const chosen = pick(items, w, $("#occasion").value);
     lastOutfit = { ids: chosen.map((i) => i.id), date: w.date };
-    $("#weather").textContent = describe(w);
+    $("#weather").textContent = describe(w) + (w.offline ? ` (offline: last saved forecast, for ${w.date})` : "");
     $("#outfit").replaceChildren(...chosen.map(card));
     $("#reason").textContent = reason(chosen, w);
     $("#gaps").replaceChildren(...gaps(items, w).map((g) => Object.assign(document.createElement("li"), { textContent: g })));
@@ -120,6 +123,38 @@ for (const tab of document.querySelectorAll(".tab")) {
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
     document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== tab.dataset.tab));
   });
+}
+
+// Installable app: offline support plus an "Install" prompt.
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch((err) => console.warn("Offline mode unavailable", err));
+
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+let dismissed = false;
+try { dismissed = localStorage.getItem("stylecast-install-dismissed") === "1"; } catch {}
+let installEvent = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installEvent = e;
+  if (!dismissed) {
+    $("#install-btn").hidden = false;
+    $("#install").hidden = false;
+  }
+});
+$("#install-btn").addEventListener("click", async () => {
+  $("#install").hidden = true;
+  await installEvent?.prompt();
+  installEvent = null;
+});
+$("#install-close").addEventListener("click", () => {
+  $("#install").hidden = true;
+  try { localStorage.setItem("stylecast-install-dismissed", "1"); } catch {}
+});
+window.addEventListener("appinstalled", () => ($("#install").hidden = true));
+// iPhone and iPad have no install prompt, so explain the Share menu instead.
+if (!standalone && !dismissed && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+  $("#install-text").textContent = 'To install: tap Share, then "Add to Home Screen".';
+  $("#install").hidden = false;
 }
 
 loadItems();

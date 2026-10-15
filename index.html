@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>StyleCast</title>
   <meta name="description" content="Photograph your wardrobe once and get an outfit for today's weather. The AI runs in your browser; photos never leave your phone.">
+  <meta name="theme-color" content="#2f5d50">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="StyleCast">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,6 +23,11 @@
   </header>
 
   <main>
+    <div id="install" class="install" hidden>
+      <span id="install-text">Add StyleCast to your home screen for one-tap outfits.</span>
+      <button id="install-btn" hidden>Install</button>
+      <button id="install-close" aria-label="Dismiss">✕</button>
+    </div>
     <section id="today" class="panel">
       <div class="row">
         <label for="occasion">Occasion</label>
