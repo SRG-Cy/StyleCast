@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, choose, fallbackAdvice, cleanAdvice, adviceFits } from "../js/shop.js";
+import { parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, gapsOnly, choose, fallbackAdvice, cleanAdvice, adviceFits } from "../js/shop.js";
 
 const item = (name, category, extra = {}) => ({
   id: name, name, category, colour: "black", warmth: 2, waterproof: false, formality: "casual", ...extra,
@@ -84,4 +84,27 @@ test("doesn't ask Gemma to pair with clothes when the wardrobe is empty", async 
   const picks = [{ title: "Jacket", price: "€20", source: "Shop", need: { query: "rain jacket", why: "" } }];
   assert.match(advicePrompt({ message: "€50", items: [], picks, total: 20, budget: 50, currency: "EUR" }), /don.t own any clothes/);
   assert.match(advicePrompt({ message: "€50", items: [item("tee", "top")], picks, total: 20, budget: 50, currency: "EUR" }), /clothes I already own/);
+});
+
+test("keeps Gemma to the gaps when the request names no clothes", () => {
+  const needs = [
+    { query: "men rain jacket", why: "Nothing waterproof." },
+    { query: "men warm wool jumper", why: "Nothing warm." },
+    { query: "men waterproof boots", why: "Shoes let rain in." },
+  ];
+  assert.ok(gapsOnly("I have 50 euro, what should I buy?", needs));
+  assert.ok(!gapsOnly("smart shoes under 60 euro", needs));
+  assert.ok(!gapsOnly("I have 50 euro", []));
+  // Seen on a real run: Gemma suggested trousers although black trousers were owned.
+  const text = "warm jumper | 20\ndark grey trousers | 15\nrain jacket | 25";
+  assert.deepEqual(parsePlan(text, 50, needs), [
+    { query: "men warm wool jumper", max: 20, why: "Nothing warm." },
+    { query: "men rain jacket", max: 25, why: "Nothing waterproof." },
+  ]);
+});
+
+test("drops a closing question from Gemma's advice", () => {
+  assert.equal(cleanAdvice("A rain jacket keeps you dry. Do you want to explore other options?"), "A rain jacket keeps you dry.");
+  assert.equal(cleanAdvice("Good picks! Want more? Or something else?"), "Good picks!");
+  assert.equal(cleanAdvice("What colour do you like?"), "What colour do you like?");
 });

@@ -8,7 +8,7 @@ import * as store from "./store.js";
 import * as weather from "./weather.js";
 import * as gemma from "./gemma.js";
 import {
-  parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, choose,
+  parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, gapsOnly, choose,
   SYSTEM, planPrompt, advicePrompt, chatPrompt, fallbackAdvice, cleanAdvice, adviceFits, SYMBOL,
 } from "./shop.js";
 
@@ -91,10 +91,12 @@ async function shop(message, items, status) {
   try {
     const text = await gemma.ask(SYSTEM, planPrompt({ message, items, needs, budget: amount, currency, who: who.value }),
       { maxTokens: 80, onProgress: (m) => (status.textContent = m) });
-    plan = parsePlan(text, amount).map((p) => {
-      const query = forWho(p.query, who.value);
-      return { ...p, query, why: needs.find((n) => n.query === query)?.why ?? "" };
-    });
+    plan = gapsOnly(message, needs)
+      ? parsePlan(text, amount, needs)
+      : parsePlan(text, amount).map((p) => {
+        const query = forWho(p.query, who.value);
+        return { ...p, query, why: needs.find((n) => n.query === query)?.why ?? "" };
+      });
   } catch (err) {
     console.error(err);
     gemmaError = err.message ?? String(err);
