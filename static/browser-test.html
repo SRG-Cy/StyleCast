@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StyleCast browser AI test</title>
+  <style>
+    :root { --bg: #f7f5f2; --card: #fff; --text: #1f1d1a; --muted: #6b665f; --accent: #2f5d50; --border: #e3ded6; --bad: #a33a2c; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #161513; --card: #22201d; --text: #eeeae4; --muted: #a29b91; --accent: #7fb8a4; --border: #36322d; --bad: #e07a6a; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; font: 15px/1.45 system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    main { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .muted { color: var(--muted); }
+    .bad { color: var(--bad); }
+    fieldset { border: 1px solid var(--border); border-radius: 10px; margin: 12px 0; padding: 10px 12px; background: var(--card); }
+    label { display: block; margin: 4px 0; }
+    button, .pick { font: inherit; border-radius: 10px; padding: 10px 14px; border: 1px solid var(--accent);
+      background: var(--accent); color: #fff; cursor: pointer; display: inline-block; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; background: var(--card); }
+    th, td { border: 1px solid var(--border); padding: 6px; vertical-align: top; text-align: left; font-size: 0.9rem; }
+    td img { width: 90px; height: 90px; object-fit: cover; border-radius: 6px; }
+    pre { white-space: pre-wrap; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 0.8rem; }
+    .scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>StyleCast: can the AI run in your browser?</h1>
+  <p class="muted">This page tags clothing photos using open models that run entirely on this device. Photos are never uploaded.
+    The first run downloads the model (cached after that).</p>
+  <p id="env" class="muted"></p>
+
+  <fieldset>
+    <legend>Which models to test</legend>
+    <label><input type="checkbox" id="use-clip" checked> <b>Fast tagger</b>: CLIP zero-shot (about 150 MB). Picks from fixed lists of clothing types and colours.</label>
+    <label><input type="checkbox" id="use-vlm" checked> <b>Smart tagger</b>: SmolVLM
+      <select id="vlm-size">
+        <option value="HuggingFaceTB/SmolVLM-256M-Instruct">256M (about 250 MB)</option>
+        <option value="HuggingFaceTB/SmolVLM-500M-Instruct" selected>500M (about 500 MB)</option>
+      </select>
+      . Looks at the photo and writes its own description.</label>
+  </fieldset>
+
+  <label class="pick">Choose clothing photos
+    <input id="photos" type="file" accept="image/*" multiple hidden>
+  </label>
+  <p id="status" class="muted"></p>
+
+  <div class="scroll">
+    <table id="results" hidden>
+      <thead><tr><th>Photo</th><th>Fast tagger (CLIP)</th><th>Smart tagger (SmolVLM)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h2 style="font-size:1.05rem">Summary to paste back</h2>
+  <pre id="summary">Run some photos first.</pre>
+  <button id="copy">Copy summary</button>
+</main>
+
+<script type="module">
+import { pipeline, AutoProcessor, AutoModelForVision2Seq, RawImage, env }
+  from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+
+env.allowLocalModels = false;
+
+const $ = (s) => document.querySelector(s);
+const hasWebGPU = !!navigator.gpu && !!(await navigator.gpu.requestAdapter().catch(() => null));
+const device = hasWebGPU ? "webgpu" : "wasm";
+$("#env").textContent = `Running on: ${hasWebGPU ? "WebGPU (graphics card, fast)" : "CPU / WebAssembly (no WebGPU found, slower)"} · ${navigator.userAgent.match(/(Chrome|Edg|Firefox|Safari)\/[\d.]+/g)?.join(" ") ?? ""}`;
+
+// ---------- Fast tagger: CLIP zero-shot ----------
+// Each clothing type carries the tags the app needs, so CLIP only has to pick the type and colour.
+const TYPES = {
+  "t-shirt":        { category: "top", warmth: 1, waterproof: false, formality: "casual" },
+  "shirt":          { category: "top", warmth: 2, waterproof: false, formality: "smart" },
+  "blouse":         { category: "top", warmth: 1, waterproof: false, formality: "smart" },
+  "jumper":         { category: "top", warmth: 3, waterproof: false, formality: "casual" },
+  "hoodie":         { category: "top", warmth: 2, waterproof: false, formality: "casual" },
+  "sports top":     { category: "top", warmth: 1, waterproof: false, formality: "sporty" },
+  "jeans":          { category: "bottom", warmth: 2, waterproof: false, formality: "casual" },
+  "trousers":       { category: "bottom", warmth: 2, waterproof: false, formality: "smart" },
+  "shorts":         { category: "bottom", warmth: 1, waterproof: false, formality: "casual" },
+  "skirt":          { category: "bottom", warmth: 1, waterproof: false, formality: "smart" },
+  "leggings":       { category: "bottom", warmth: 2, waterproof: false, formality: "sporty" },
+  "dress":          { category: "dress", warmth: 1, waterproof: false, formality: "smart" },
+  "rain jacket":    { category: "outerwear", warmth: 2, waterproof: true, formality: "casual" },
+  "puffer jacket":  { category: "outerwear", warmth: 3, waterproof: false, formality: "casual" },
+  "wool coat":      { category: "outerwear", warmth: 3, waterproof: false, formality: "smart" },
+  "blazer":         { category: "outerwear", warmth: 2, waterproof: false, formality: "smart" },
+  "denim jacket":   { category: "outerwear", warmth: 2, waterproof: false, formality: "casual" },
+  "trainers":       { category: "shoes", warmth: 2, waterproof: false, formality: "casual" },
+  "boots":          { category: "shoes", warmth: 3, waterproof: true, formality: "casual" },
+  "smart shoes":    { category: "shoes", warmth: 2, waterproof: false, formality: "smart" },
+  "sandals":        { category: "shoes", warmth: 1, waterproof: false, formality: "casual" },
+  "scarf":          { category: "accessory", warmth: 3, waterproof: false, formality: "casual" },
+  "hat":            { category: "accessory", warmth: 2, waterproof: false, formality: "casual" },
+  "bag":            { category: "accessory", warmth: 1, waterproof: false, formality: "casual" },
+};
+const COLOURS = ["black", "white", "grey", "navy", "blue", "light blue", "green", "olive", "red", "burgundy",
+  "pink", "purple", "yellow", "orange", "brown", "beige", "cream", "denim", "patterned", "striped"];
+
+let clip;
+async function loadClip() {
+  clip ??= await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32", { device, progress_callback: progress("fast tagger") });
+  return clip;
+}
+
+async function clipTag(image) {
+  const c = await loadClip();
+  const t0 = performance.now();
+  const types = await c(image, Object.keys(TYPES), { hypothesis_template: "a photo of a {}" });
+  const colours = await c(image, COLOURS, { hypothesis_template: "a photo of {} clothing" });
+  const seconds = (performance.now() - t0) / 1000;
+  const type = types[0].label, colour = colours[0].label;
+  return {
+    seconds,
+    tags: { name: `${colour} ${type}`, ...TYPES[type] },
+    detail: `type ${pct(types[0])}, next: ${types[1].label} ${pct(types[1])} · colour ${pct(colours[0])}`,
+  };
+}
+
+// ---------- Smart tagger: SmolVLM ----------
+const PROMPT = `Describe the main clothing item in this photo. Reply with exactly these four lines:
+name: <colour and item, e.g. navy wool jumper>
+category: <one of: top, bottom, dress, outerwear, shoes, accessory>
+waterproof: <yes or no>
+formality: <one of: casual, smart, sporty>`;
+
+let vlm;
+async function loadVlm() {
+  const id = $("#vlm-size").value;
+  if (vlm?.id !== id) {
+    const dtype = device === "webgpu"
+      ? { embed_tokens: "fp16", vision_encoder: "q4", decoder_model_merged: "q4" }
+      : "q8";
+    const processor = await AutoProcessor.from_pretrained(id);
+    const model = await AutoModelForVision2Seq.from_pretrained(id, { dtype, device, progress_callback: progress("smart tagger") });
+    vlm = { id, processor, model };
+  }
+  return vlm;
+}
+
+async function vlmTag(image) {
+  const { processor, model } = await loadVlm();
+  const t0 = performance.now();
+  const messages = [{ role: "user", content: [{ type: "image" }, { type: "text", text: PROMPT }] }];
+  const text = processor.apply_chat_template(messages, { add_generation_prompt: true });
+  const inputs = await processor(text, [image], { do_image_splitting: false });
+  const out = await model.generate({ ...inputs, max_new_tokens: 60, do_sample: false });
+  const raw = processor.batch_decode(out.slice(null, [inputs.input_ids.dims.at(-1), null]), { skip_special_tokens: true })[0].trim();
+  const seconds = (performance.now() - t0) / 1000;
+  const field = (k) => raw.match(new RegExp(`${k}\\s*:\\s*(.+)`, "i"))?.[1].trim().toLowerCase();
+  const tags = {
+    name: field("name"),
+    category: field("category"),
+    waterproof: field("waterproof")?.startsWith("y"),
+    formality: field("formality"),
+  };
+  const valid = ["top", "bottom", "dress", "outerwear", "shoes", "accessory"].includes(tags.category);
+  return { seconds, tags, detail: valid ? "" : "⚠ answer not in the expected format", raw };
+}
+
+// ---------- Page plumbing ----------
+const pct = (r) => `${Math.round(r.score * 100)}%`;
+function progress(what) {
+  const seen = {};
+  return (p) => {
+    if (p.status === "progress" && p.total) {
+      seen[p.file] = [p.loaded, p.total];
+      const [l, t] = Object.values(seen).reduce(([a, b], [x, y]) => [a + x, b + y], [0, 0]);
+      $("#status").textContent = `Downloading ${what}: ${(l / 1e6).toFixed(0)} of ${(t / 1e6).toFixed(0)} MB…`;
+    }
+  };
+}
+
+const runs = [];
+function cell(result) {
+  if (!result) return "<td class='muted'>skipped</td>";
+  if (result.error) return `<td class="bad">Error: ${esc(result.error)}</td>`;
+  const t = result.tags;
+  return `<td><b>${esc(t.name ?? "?")}</b><br>${esc(t.category ?? "?")} · ${t.waterproof ? "waterproof" : "not waterproof"} · ${esc(t.formality ?? "?")}
+    ${t.warmth ? ` · warmth ${t.warmth}` : ""}<br><span class="muted">${result.seconds.toFixed(1)} s ${esc(result.detail)}</span>
+    ${result.raw ? `<details><summary class="muted">raw answer</summary><pre>${esc(result.raw)}</pre></details>` : ""}</td>`;
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function attempt(fn, image) {
+  try { return await fn(image); } catch (e) { console.error(e); return { error: e.message ?? String(e) }; }
+}
+
+$("#photos").addEventListener("change", async (e) => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  const useClip = $("#use-clip").checked, useVlm = $("#use-vlm").checked;
+  $("#results").hidden = false;
+  for (const [i, file] of files.entries()) {
+    const url = URL.createObjectURL(file);
+    const image = await RawImage.fromURL(url);
+    $("#status").textContent = `Tagging photo ${i + 1} of ${files.length}…`;
+    const clipR = useClip ? await attempt(clipTag, image) : null;
+    const vlmR = useVlm ? await attempt(vlmTag, image) : null;
+    runs.push({ file: file.name, clip: clipR, vlm: vlmR });
+    const row = document.createElement("tr");
+    row.innerHTML = `<td><img src="${url}" alt=""><br><span class="muted">${esc(file.name)}</span></td>${cell(clipR)}${cell(vlmR)}`;
+    $("#results tbody").append(row);
+    summarise();
+  }
+  $("#status").textContent = "Done. Check each row: is the item, colour and waterproof tag right?";
+});
+
+function summarise() {
+  const avg = (k) => {
+    const s = runs.map((r) => r[k]).filter((r) => r && !r.error).map((r) => r.seconds);
+    return s.length ? `${(s.reduce((a, b) => a + b, 0) / s.length).toFixed(1)} s avg over ${s.length}` : "not run";
+  };
+  const lines = [
+    `Device: ${device}`,
+    `Fast tagger (CLIP): ${avg("clip")}`,
+    `Smart tagger (${vlm?.id?.split("/")[1] ?? "SmolVLM"}): ${avg("vlm")}`,
+    "",
+    ...runs.map((r) => `${r.file} | CLIP: ${r.clip?.tags?.name ?? r.clip?.error ?? "-"} | VLM: ${r.vlm?.tags?.name ?? r.vlm?.error ?? "-"} (${r.vlm?.tags?.category ?? ""})`),
+  ];
+  $("#summary").textContent = lines.join("\n");
+}
+
+$("#copy").addEventListener("click", () => navigator.clipboard.writeText($("#summary").textContent));
+</script>
+</body>
+</html>
