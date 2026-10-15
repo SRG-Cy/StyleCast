@@ -7,7 +7,7 @@ Built for the DEV Hacktoberfest 2026 Open-Source AI Challenge, Week 2 ("Side Hus
 ## What it does
 
 - **Wardrobe scan:** snap each item. An open model running in your browser tags type, colour, warmth, waterproofing and formality. Every tag is editable.
-- **Daily outfit:** checks today's forecast (rain, wind, temperature) and your occasion (work, gym, night out), then picks an outfit from your wardrobe.
+- **Daily outfit:** checks today's forecast (rain, wind, temperature) and your occasion (casual, work or gym), then picks an outfit from your wardrobe.
 - **Wear history:** remembers what you wore recently so it doesn't repeat, and lets you mark items "in the wash".
 - **Gap spotting:** tells you what your wardrobe is missing for the weather you actually get ("nothing waterproof for days like today").
 
@@ -47,7 +47,7 @@ python -m http.server 8000
 
 Open http://localhost:8000. Add `?mock=1` to skip the model download (every photo gets placeholder tags), which is handy for working on the page.
 
-To publish it, turn on GitHub Pages for the `main` branch (Settings > Pages > Deploy from a branch > `main` / root). The app is then at `https://<user>.github.io/stylecast/`.
+To publish it, turn on GitHub Pages for the `main` branch (Settings > Pages > Deploy from a branch > `main` / root). GitHub then shows the app's link on that page (`https://<user>.github.io/<repo>/`).
 
 `browser-test.html` is a separate page for measuring tagging speed and accuracy, comparing CLIP with SmolVLM.
 
