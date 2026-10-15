@@ -146,18 +146,30 @@ function exampleLines(needs, budget) {
   return ex.map((q) => `${q} | ${each}`).join("\n");
 }
 
-// Kept simple for a small model: the new items without prices, and what's owned by name only.
-export function advicePrompt({ message, items, picks }) {
-  const lines = picks.map((p) => `- ${p.need.query}${p.need.why ? ` (${p.need.why})` : ""}`);
+// One short question per item: Gemma 3 1B mixes up "new" and "owned" when asked about several at once.
+export function itemAdvicePrompt({ items, pick }) {
+  const owned = items.slice(0, 40).map((i) => i.name).join(", ");
   return [
-    items.length ? `Clothes I already own: ${items.slice(0, 40).map((i) => i.name).join(", ")}.` : "I don't own any clothes in the app yet.",
-    `My request: ${message}`,
-    `New things to buy:\n${lines.join("\n")}`,
-    (items.length
-      ? "For each new thing, write one short sentence saying why it's a good buy and which of the clothes I already own it goes with. "
-      : "In 2 or 3 short sentences, say why these are good first buys. ") +
-      "Only talk about the new things listed and the clothes I own. Don't mention prices.",
+    items.length ? `Clothes I already own: ${owned}.` : "I don't own any clothes in the app yet.",
+    `I'm buying a new ${pick.need.query}.${pick.need.why ? ` ${pick.need.why}` : ""}`,
+    items.length
+      ? `In one sentence, say why a ${pick.need.query} is a good buy and which one or two of the clothes I own it goes with.`
+      : `In one sentence, say why a ${pick.need.query} is a good first buy.`,
+    "Don't mention prices.",
   ].join("\n\n");
+}
+
+// Gemma chooses the most important gaps; any it leaves out are still searched with the money left,
+// so a €50 budget isn't spent on one €14 item.
+export function fillPlan(plan, needs, budget) {
+  const out = [...plan];
+  const planned = plan.reduce((s, p) => s + (p.max ?? 0), 0);
+  const left = budget ? Math.max(budget - planned, Math.round(budget * 0.4)) : null;
+  for (const n of needs) {
+    if (out.length === 3) break;
+    if (!out.some((p) => p.query === n.query)) out.push({ ...n, max: left });
+  }
+  return out;
 }
 
 // Remove any prices Gemma writes anyway (the app shows the real ones on the product cards), and a

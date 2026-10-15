@@ -80,10 +80,18 @@ test("strips prices Gemma invents and checks the advice is on topic", () => {
 });
 
 test("doesn't ask Gemma to pair with clothes when the wardrobe is empty", async () => {
-  const { advicePrompt } = await import("../js/shop.js");
-  const picks = [{ title: "Jacket", price: "€20", source: "Shop", need: { query: "rain jacket", why: "" } }];
-  assert.match(advicePrompt({ message: "€50", items: [], picks, total: 20, budget: 50, currency: "EUR" }), /don.t own any clothes/);
-  assert.match(advicePrompt({ message: "€50", items: [item("tee", "top")], picks, total: 20, budget: 50, currency: "EUR" }), /clothes I already own/);
+  const { itemAdvicePrompt } = await import("../js/shop.js");
+  const pick = { title: "Jacket", price: "€20", source: "Shop", need: { query: "rain jacket", why: "" } };
+  assert.match(itemAdvicePrompt({ items: [], pick }), /don.t own any clothes/);
+  assert.match(itemAdvicePrompt({ items: [item("tee", "top")], pick }), /Clothes I already own: tee/);
+});
+
+test("searches the gaps Gemma left out with the money left over", async () => {
+  const { fillPlan } = await import("../js/shop.js");
+  const needs = [{ query: "rain jacket", why: "a" }, { query: "warm wool jumper", why: "b" }, { query: "waterproof boots", why: "c" }];
+  // Seen on a real run: Gemma picked only the jumper, so €36 of €50 went unused.
+  const plan = fillPlan([{ query: "warm wool jumper", max: 28, why: "b" }], needs, 50);
+  assert.deepEqual(plan.map((p) => [p.query, p.max]), [["warm wool jumper", 28], ["rain jacket", 22], ["waterproof boots", 22]]);
 });
 
 test("keeps Gemma to the gaps when the request names no clothes", () => {
