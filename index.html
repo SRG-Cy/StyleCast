@@ -2,90 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>StyleCast</title>
   <meta name="description" content="Photograph your wardrobe once and get an outfit for today's weather. The AI runs in your browser; photos never leave your phone.">
-  <meta name="theme-color" content="#2f5d50">
+  <meta name="theme-color" content="#4f78a8">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon-192.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="StyleCast">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header>
-    <h1>StyleCast</h1>
-    <nav>
-      <button class="tab active" data-tab="today">Today</button>
-      <button class="tab" data-tab="wardrobe">Wardrobe</button>
-      <button class="tab" data-tab="shop">Shop</button>
-    </nav>
+<body class="sky-cloud">
+  <header class="top">
+    <img class="logo" src="icons/logo.svg" alt="" width="40" height="40">
+    <span class="wordmark">stylecast</span>
   </header>
 
   <main>
-    <div id="install" class="install" hidden>
+    <div id="install" class="install sticker" hidden>
       <span id="install-text">Add StyleCast to your home screen for one-tap outfits.</span>
-      <button id="install-btn" hidden>Install</button>
-      <button id="install-close" aria-label="Dismiss">✕</button>
+      <button id="install-btn" class="btn small" hidden>Install</button>
+      <button id="install-close" class="icon-btn" aria-label="Dismiss">✕</button>
     </div>
+
     <section id="today" class="panel">
-      <div class="row">
-        <label for="occasion">Occasion</label>
-        <select id="occasion">
-          <option value="casual">Casual</option>
-          <option value="smart">Work / smart</option>
-          <option value="sporty">Gym / sporty</option>
-        </select>
+      <div class="hero">
+        <div id="temp" class="temp">–°</div>
+        <div class="sticker weather-card">
+          <div id="summary" class="summary">Today</div>
+          <p id="weather">Checking the forecast…</p>
+        </div>
       </div>
-      <button id="get-outfit" class="primary">What should I wear?</button>
-      <p id="weather" class="muted"></p>
-      <div id="outfit" class="grid"></div>
-      <p id="reason"></p>
-      <ul id="gaps"></ul>
-      <button id="wear" class="secondary" hidden>I'm wearing this</button>
+
+      <div class="pills" role="radiogroup" aria-label="Occasion">
+        <label class="pill"><input type="radio" name="occasion" value="casual" checked><span>Casual</span></label>
+        <label class="pill"><input type="radio" name="occasion" value="smart"><span>Work</span></label>
+        <label class="pill"><input type="radio" name="occasion" value="sporty"><span>Gym</span></label>
+      </div>
+
+      <div class="sticker look">
+        <div class="look-head">
+          <h2>Today you're wearing</h2>
+          <button id="get-outfit" class="icon-btn" aria-label="Check the weather again">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
+        </div>
+        <div id="outfit" class="outfit"></div>
+        <p id="reason"></p>
+        <button id="start" class="btn sun" type="button" hidden>Add your clothes</button>
+      </div>
+
+      <ul id="gaps" class="gaps"></ul>
+
+      <button id="wear" class="btn primary" hidden>I'm wearing this</button>
     </section>
 
     <section id="wardrobe" class="panel" hidden>
-      <label class="primary upload">
-        Add clothes
+      <div class="title-row">
+        <h1 class="screen-title">Wardrobe</h1>
+        <span id="count" class="badge"></span>
+      </div>
+      <button id="samples" class="btn secondary" type="button">Add sample clothes to try it out</button>
+      <div id="filters" class="pills scroll" role="group" aria-label="Show category">
+        <button type="button" class="pill-btn" data-cat="" aria-pressed="true">All</button>
+        <button type="button" class="pill-btn" data-cat="top" aria-pressed="false">Tops</button>
+        <button type="button" class="pill-btn" data-cat="bottom" aria-pressed="false">Bottoms</button>
+        <button type="button" class="pill-btn" data-cat="dress" aria-pressed="false">Dresses</button>
+        <button type="button" class="pill-btn" data-cat="outerwear" aria-pressed="false">Layers</button>
+        <button type="button" class="pill-btn" data-cat="shoes" aria-pressed="false">Shoes</button>
+        <button type="button" class="pill-btn" data-cat="accessory" aria-pressed="false">Extras</button>
+      </div>
+      <p id="upload-status" class="status" aria-live="polite"></p>
+      <div id="items" class="grid"></div>
+      <label class="btn sun snap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        Snap new clothes
         <input id="photo" type="file" accept="image/*" multiple hidden>
       </label>
-      <button id="samples" class="secondary" type="button">Add sample clothes to try it out</button>
-      <p id="upload-status" class="muted"></p>
-      <div id="items" class="grid"></div>
     </section>
 
     <section id="shop" class="panel" hidden>
-      <p class="muted">Tell me your budget and I'll find real items that fill your wardrobe's gaps.</p>
-      <div class="row">
-        <label for="shop-country">Shop in</label>
-        <select id="shop-country">
-          <option value="ie">Ireland (€)</option><option value="de">Germany (€)</option><option value="fr">France (€)</option>
-          <option value="es">Spain (€)</option><option value="it">Italy (€)</option><option value="nl">Netherlands (€)</option>
-          <option value="uk">UK (£)</option><option value="us">US ($)</option><option value="in">India (₹)</option>
-        </select>
+      <div class="title-row">
+        <h1 class="screen-title">Shop</h1>
+        <details class="settings">
+          <summary class="pill-btn"><span id="shop-where">Where and who</span></summary>
+          <div class="sticker settings-card">
+            <label for="shop-country">Shop in</label>
+            <select id="shop-country">
+              <option value="ie">Ireland (€)</option><option value="de">Germany (€)</option><option value="fr">France (€)</option>
+              <option value="es">Spain (€)</option><option value="it">Italy (€)</option><option value="nl">Netherlands (€)</option>
+              <option value="uk">UK (£)</option><option value="us">US ($)</option><option value="in">India (₹)</option>
+            </select>
+            <label for="shop-who">Shop for</label>
+            <select id="shop-who">
+              <option value="any">Anyone</option><option value="women's">Women</option><option value="men's">Men</option>
+            </select>
+          </div>
+        </details>
       </div>
-      <div class="row">
-        <label for="shop-who">Shop for</label>
-        <select id="shop-who">
-          <option value="any">Anyone</option><option value="women's">Women</option><option value="men's">Men</option>
-        </select>
-      </div>
-      <div class="chips">
-        <button type="button" class="chip">I have €50 today. What should I buy to improve my wardrobe?</button>
-        <button type="button" class="chip">What goes with my jeans?</button>
-      </div>
+      <div class="bubble bot intro">Tell me your budget and I'll find real items that fill your wardrobe's gaps.</div>
       <div id="chat-log" aria-live="polite"></div>
-      <form id="chat-form" class="chat-form">
-        <input id="chat-input" autocomplete="off" placeholder="I have €50, what should I buy?" aria-label="Message">
-        <button id="chat-send" class="primary">Send</button>
-      </form>
-      <p class="muted small-text">The chat AI (Gemma) runs on this device and downloads once, the first time you send a message, so use Wi-Fi. Only short search words like "rain jacket" go to the shopping server. Shop links may earn StyleCast a small commission.</p>
+      <div class="composer">
+        <div class="chips pills scroll">
+          <button type="button" class="chip">I have €50 today. What should I buy to improve my wardrobe?</button>
+          <button type="button" class="chip">What goes with my jeans?</button>
+        </div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" autocomplete="off" placeholder="I have €50, what should I buy?" aria-label="Message">
+          <button id="chat-send" class="btn sun send" aria-label="Send">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+          </button>
+        </form>
+        <p class="note">Gemma runs on this phone and downloads once, so use Wi-Fi the first time. Only words like "rain jacket" go to the shopping server. Shop links may earn StyleCast a small commission.</p>
+      </div>
     </section>
 
-    <p class="muted small">Your photos and wardrobe stay on this device. The tagging AI runs in your browser.</p>
+    <p class="note privacy">Your photos and wardrobe stay on this device. The tagging AI runs in your browser.</p>
   </main>
+
+  <nav class="tabs" aria-label="Sections">
+    <button class="tab active" data-tab="today" aria-current="page">Today</button>
+    <button class="tab" data-tab="wardrobe">Wardrobe</button>
+    <button class="tab" data-tab="shop">Shop</button>
+  </nav>
 
   <dialog id="editor">
     <form method="dialog" id="edit-form">
@@ -102,18 +143,18 @@
       <label>Colour <input name="colour"></label>
       <label>Warmth
         <select name="warmth">
-          <option value="1">1 · light</option><option value="2">2 · medium</option><option value="3">3 · warm</option>
+          <option value="1">Light</option><option value="2">Medium</option><option value="3">Warm</option>
         </select>
       </label>
-      <label>Formality
-        <select name="formality"><option>casual</option><option>smart</option><option>sporty</option></select>
+      <label>Style
+        <select name="formality"><option value="casual">Casual</option><option value="smart">Work / smart</option><option value="sporty">Gym / sporty</option></select>
       </label>
       <label class="check"><input type="checkbox" name="waterproof"> Waterproof</label>
       <label class="check"><input type="checkbox" name="inWash"> In the wash</label>
       <div class="actions">
-        <button value="delete" class="danger">Delete</button>
-        <button value="cancel">Cancel</button>
-        <button value="save" class="primary">Save</button>
+        <button value="delete" class="btn danger">Delete</button>
+        <button value="cancel" class="btn">Cancel</button>
+        <button value="save" class="btn primary">Save</button>
       </div>
     </form>
   </dialog>
