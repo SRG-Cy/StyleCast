@@ -1,0 +1,18 @@
+# Render Blueprint for StyleCast's shopping server (Render dashboard > New > Blueprint).
+# The app itself stays a static site; this small service only holds the SerpApi key.
+services:
+  - type: web
+    name: stylecast-shop
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: SERPAPI_KEY
+        sync: false # paste it in the Render dashboard; it never goes in the repo
+      - key: ALLOWED_ORIGINS
+        value: https://srg-cy.github.io,http://localhost:8000
+      - key: DAILY_LIMIT
+        value: "100"

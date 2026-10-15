@@ -6,7 +6,9 @@ Deadline: Sat Oct 18, 11:59 PM PDT.
 
 In: wardrobe photo upload + auto-tagging, editable tags, daily outfit from forecast + occasion, wear history and "in the wash", wardrobe gap tips, thumbs up/down feedback, install to the home screen, offline use.
 
-Out: virtual try-on, images of you wearing outfits, accounts/login, shopping integration, multi-item photos (the in-browser tagger reads one item per photo), a native Android or iPhone app (the installable web app covers it).
+Added Oct 15: a budget chat (Shop tab) for the Gemma, Render and SerpApi partner categories.
+
+Out: virtual try-on, images of you wearing outfits, accounts/login, multi-item photos (the in-browser tagger reads one item per photo), a native Android or iPhone app (the installable web app covers it).
 
 ## Stack (changed Oct 15: everything runs in the browser)
 
