@@ -2,10 +2,13 @@
 //
 // With WebGPU it uses Gemma 3 1B; without it (older phones), the smaller Gemma 3 270M on
 // WebAssembly so replies still arrive in reasonable time. If one version fails, the next is
-// tried. The model downloads only when the chat is first used, the browser caches it, and
-// nothing typed here leaves the device except the short search words sent to the shopping server.
+// tried, each in a fresh worker (js/gemma-worker.js). The model downloads only when the chat
+// is first used, the browser caches it, and nothing typed here leaves the device except the
+// short search words sent to the shopping server.
 
-const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+// Newer than the tagger's copy (js/tagger.js): its ONNX Runtime handles Gemma 3's 4-bit files better.
+const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0";
+
 // Tried in order until one loads. q4f16 needs the GPU's 16-bit float support ("shader-f16"),
 // which some GPUs lack, so plain q4 and then WebAssembly are the backups.
 const CANDIDATES = [
@@ -15,41 +18,47 @@ const CANDIDATES = [
   { id: "onnx-community/gemma-3-1b-it-ONNX", dtype: "q4", device: "wasm" },
 ];
 
+const params = new URLSearchParams(location.search);
+const MOCK = params.has("mock");
+// For testing the worker on a local copy of the library; only honoured on localhost.
+const LIB = (location.hostname === "localhost" && params.get("tjs")) || TRANSFORMERS;
+
 export let loaded = null; // which candidate is running, for the status line and the DEV post numbers
 
-const MOCK = new URLSearchParams(location.search).has("mock");
-
-let generator;
+let worker;
 let loading;
 let busy = Promise.resolve();
+let nextId = 0;
+
+// Start a worker on one candidate. Resolves with the worker once the model is ready.
+function tryCandidate(c, onProgress) {
+  return new Promise((resolve, reject) => {
+    const w = new Worker(new URL("./gemma-worker.js", import.meta.url), { type: "module" });
+    w.onmessage = ({ data }) => {
+      if (data.type === "progress") onProgress?.(data.text);
+      else if (data.type === "ready") { w.onmessage = null; resolve(w); }
+      else if (data.type === "error") { w.terminate(); reject(new Error(data.message)); }
+    };
+    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || "the AI worker crashed")); };
+    w.postMessage({ type: "load", lib: LIB, candidate: c });
+  });
+}
 
 async function load(onProgress) {
-  if (generator) return generator;
+  if (worker) return worker;
   loading ??= (async () => {
-    const lib = await import(TRANSFORMERS);
-    lib.env.allowLocalModels = false;
     const adapter = navigator.gpu ? await navigator.gpu.requestAdapter().catch(() => null) : null;
     const usable = CANDIDATES.filter((c) => c.device === "wasm" || (adapter && (!c.needs || adapter.features.has(c.needs))));
     const errors = [];
     for (const c of usable) {
-      const files = {};
       try {
-        generator = await lib.pipeline("text-generation", c.id, {
-          device: c.device,
-          dtype: c.dtype,
-          progress_callback: (p) => {
-            if (p.status !== "progress" || !p.total) return;
-            files[p.file] = [p.loaded, p.total];
-            const [done, total] = Object.values(files).reduce(([a, b], [x, y]) => [a + x, b + y], [0, 0]);
-            onProgress?.(`Downloading Gemma (first time only): ${Math.round(done / 1e6)} of ${Math.round(total / 1e6)} MB`);
-          },
-        });
+        worker = await tryCandidate(c, onProgress);
         loaded = c;
         console.info("Gemma loaded", c);
-        return generator;
+        return worker;
       } catch (err) {
         console.warn("Gemma option failed", c, err);
-        errors.push(`${c.id.split("/")[1]} ${c.dtype} on ${c.device}: ${err.message ?? err}`);
+        errors.push(`${c.id.split("/")[1]} ${c.dtype} on ${c.device}: ${err.message}`);
       }
     }
     throw new Error(errors.join(" | ") || "no option could run in this browser");
@@ -62,7 +71,21 @@ async function load(onProgress) {
   }
 }
 
-export const ready = () => !!generator || MOCK;
+export const ready = () => !!worker || MOCK;
+
+function generate(w, messages, maxTokens) {
+  const id = nextId++;
+  return new Promise((resolve, reject) => {
+    const onMessage = ({ data }) => {
+      if (data.id !== id) return;
+      w.removeEventListener("message", onMessage);
+      if (data.type === "result") resolve(data.text);
+      else reject(new Error(data.message));
+    };
+    w.addEventListener("message", onMessage);
+    w.postMessage({ type: "generate", id, messages, maxTokens });
+  });
+}
 
 // One prompt in, Gemma's text out. Requests queue, since the model runs one at a time.
 export function ask(system, prompt, { maxTokens = 220, onProgress } = {}) {
@@ -72,11 +95,9 @@ export function ask(system, prompt, { maxTokens = 220, onProgress } = {}) {
       : "(mock Gemma) These fill the gaps StyleCast found and go with what you already own.");
   }
   const run = busy.then(async () => {
-    const gen = await load(onProgress);
+    const w = await load(onProgress);
     onProgress?.("Gemma is thinking…");
-    const out = await gen([{ role: "system", content: system }, { role: "user", content: prompt }],
-      { max_new_tokens: maxTokens, do_sample: false });
-    return out[0].generated_text.at(-1).content.trim();
+    return generate(w, [{ role: "system", content: system }, { role: "user", content: prompt }], maxTokens);
   });
   busy = run.catch(() => {});
   return run;

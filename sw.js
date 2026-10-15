@@ -5,12 +5,12 @@
 // - The model files from Hugging Face are cached by Transformers.js itself.
 // - The weather and shopping searches are never cached here.
 
-const APP = "stylecast-app-v3";
+const APP = "stylecast-app-v4";
 const LIBS = "stylecast-libs-v1";
 const SHELL = [
   "./", "index.html", "style.css", "manifest.webmanifest",
   "js/app.js", "js/store.js", "js/tagger.js", "js/weather.js", "js/outfit.js",
-  "js/chat.js", "js/shop.js", "js/gemma.js",
+  "js/chat.js", "js/shop.js", "js/gemma.js", "js/gemma-worker.js",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
 ];
 
