@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, choose, fallbackAdvice } from "../js/shop.js";
+import { parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, choose, fallbackAdvice, cleanAdvice, adviceFits } from "../js/shop.js";
 
 const item = (name, category, extra = {}) => ({
   id: name, name, category, colour: "black", warmth: 2, waterproof: false, formality: "casual", ...extra,
@@ -53,6 +53,8 @@ test("reads Gemma's search plan and ignores chatter", () => {
     { query: "hat", max: 50, why: "" },
   ]);
   assert.deepEqual(parsePlan("I think you should buy a coat.", 50), []);
+  // Seen on a real run: Gemma 3 1B echoed the format line instead of a search.
+  assert.deepEqual(parsePlan("search words | 21", 50), []);
 });
 
 test("keeps the picks within budget", () => {
@@ -69,9 +71,17 @@ test("keeps the picks within budget", () => {
   assert.match(fallbackAdvice(picks, total, 50, "EUR"), /€42 of your €50/);
 });
 
+test("strips prices Gemma invents and checks the advice is on topic", () => {
+  assert.equal(cleanAdvice("The navy t-shirt (€21) pairs with the grey hoodie (€21). Shorts €1 work."),
+    "The navy t-shirt pairs with the grey hoodie. Shorts work.");
+  const picks = [{ need: { query: "rain jacket" } }];
+  assert.ok(adviceFits("A jacket like this keeps you dry.", picks));
+  assert.ok(!adviceFits("The navy t-shirt pairs with the grey hoodie.", picks));
+});
+
 test("doesn't ask Gemma to pair with clothes when the wardrobe is empty", async () => {
   const { advicePrompt } = await import("../js/shop.js");
   const picks = [{ title: "Jacket", price: "€20", source: "Shop", need: { query: "rain jacket", why: "" } }];
-  assert.match(advicePrompt({ message: "€50", items: [], picks, total: 20, budget: 50, currency: "EUR" }), /wardrobe is empty/);
-  assert.match(advicePrompt({ message: "€50", items: [item("tee", "top")], picks, total: 20, budget: 50, currency: "EUR" }), /things I already own/);
+  assert.match(advicePrompt({ message: "€50", items: [], picks, total: 20, budget: 50, currency: "EUR" }), /don.t own any clothes/);
+  assert.match(advicePrompt({ message: "€50", items: [item("tee", "top")], picks, total: 20, budget: 50, currency: "EUR" }), /clothes I already own/);
 });

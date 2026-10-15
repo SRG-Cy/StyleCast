@@ -90,7 +90,7 @@ function generate(w, messages, maxTokens) {
 // One prompt in, Gemma's text out. Requests queue, since the model runs one at a time.
 export function ask(system, prompt, { maxTokens = 220, onProgress } = {}) {
   if (MOCK) {
-    return Promise.resolve(/max price/.test(prompt)
+    return Promise.resolve(/a | sign/.test(prompt)
       ? "rain jacket | 35\nplain t-shirt | 15"
       : "(mock Gemma) These fill the gaps StyleCast found and go with what you already own.");
   }

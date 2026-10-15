@@ -9,7 +9,7 @@ import * as weather from "./weather.js";
 import * as gemma from "./gemma.js";
 import {
   parseBudget, wantsShopping, shoppingNeeds, forWho, parsePlan, choose,
-  SYSTEM, planPrompt, advicePrompt, chatPrompt, fallbackAdvice, SYMBOL,
+  SYSTEM, planPrompt, advicePrompt, chatPrompt, fallbackAdvice, cleanAdvice, adviceFits, SYMBOL,
 } from "./shop.js";
 
 const params = new URLSearchParams(location.search);
@@ -116,9 +116,13 @@ async function shop(message, items, status) {
   let text = fallbackAdvice(picks, total, amount, currency);
   if (picks.length && !gemmaError) {
     try {
-      text = await gemma.ask(SYSTEM, advicePrompt({ message, items, picks, total, budget: amount, currency }),
-        { onProgress: (m) => (status.textContent = m) });
-      if (amount) text += `\n\nTotal: ${SYMBOL[currency]}${total} of ${SYMBOL[currency]}${amount}.`;
+      const advice = cleanAdvice(await gemma.ask(SYSTEM, advicePrompt({ message, items, picks }),
+        { onProgress: (m) => (status.textContent = m) }));
+      // Keep the rules' wording when Gemma wanders off the items being bought.
+      if (adviceFits(advice, picks)) {
+        text = advice;
+        if (amount) text += `\n\nTotal: ${SYMBOL[currency]}${total} of ${SYMBOL[currency]}${amount}.`;
+      }
     } catch (err) {
       console.error(err);
     }
@@ -145,7 +149,7 @@ $("#chat-form").addEventListener("submit", async (e) => {
       reply.textContent = text;
       if (picks.length) reply.append(...picks.map(productCard));
     } else {
-      reply.textContent = await gemma.ask(SYSTEM, chatPrompt({ message, items }), { onProgress: (m) => (reply.textContent = m) });
+      reply.textContent = cleanAdvice(await gemma.ask(SYSTEM, chatPrompt({ message, items }), { onProgress: (m) => (reply.textContent = m) }));
     }
   } catch (err) {
     console.error(err);
