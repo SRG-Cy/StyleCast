@@ -88,11 +88,19 @@
         <div id="items" class="rails"></div>
         <button id="samples" class="btn quiet wide" type="button">Add sample clothes to try it out</button>
       </div>
-      <label class="btn brass snap">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        Add clothes
-        <input id="photo" type="file" accept="image/*" multiple hidden>
-      </label>
+      <!-- Two inputs: Android hides the camera when a picker allows several photos. -->
+      <div class="snap">
+        <label class="btn brass">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          Take photo
+          <input id="camera" class="photo-input" type="file" accept="image/*" capture="environment" hidden>
+        </label>
+        <label class="btn brass">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m20 15-4-4-8 9"/></svg>
+          Upload
+          <input id="photo" class="photo-input" type="file" accept="image/*" multiple hidden>
+        </label>
+      </div>
     </section>
 
     <section id="shop" class="panel" hidden>

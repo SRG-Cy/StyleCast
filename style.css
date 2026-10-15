@@ -271,8 +271,9 @@ main { max-width: 560px; margin: 0 auto; }
 
 .snap {
   position: fixed; z-index: 5; right: max(20px, calc(50% - 260px)); bottom: calc(var(--tabs) + var(--safe-bottom) + 16px);
-  border-radius: 999px; box-shadow: 0 12px 26px -12px rgb(20 12 12 / .5); cursor: pointer;
+  display: flex; gap: 8px;
 }
+.snap .btn { border-radius: 999px; box-shadow: 0 12px 26px -12px rgb(20 12 12 / .5); cursor: pointer; }
 #wardrobe .room { padding-bottom: 90px; }
 
 /* ---------- Shop: a chat in the fitting room ---------- */

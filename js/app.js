@@ -56,7 +56,7 @@ async function loadItems() {
   const shown = filter ? items.filter((i) => i.category === filter) : items;
   box.replaceChildren(...RAILS.map(([cat, title]) => [title, shown.filter((i) => i.category === cat)])
     .filter(([, list]) => list.length).map(([title, list]) => rail(title, list)));
-  if (!items.length) box.innerHTML = "<p>No clothes yet. Tap “Add clothes” to photograph your first item, or try the sample clothes.</p>";
+  if (!items.length) box.innerHTML = "<p>No clothes yet. Tap “Take photo” or “Upload” to add your first item, or try the sample clothes.</p>";
   else if (!shown.length) box.innerHTML = "<p>Nothing in this category yet.</p>";
   const washing = items.filter((i) => i.inWash).length;
   $("#count").textContent = items.length ? `${items.length} item${items.length === 1 ? "" : "s"}${washing ? ` · ${washing} in the wash` : ""}` : "";
@@ -78,7 +78,7 @@ $("#samples").addEventListener("click", async () => {
   showOutfit();
 });
 
-$("#photo").addEventListener("change", async (e) => {
+const addPhotos = async (e) => {
   const files = [...e.target.files];
   e.target.value = "";
   const status = $("#upload-status");
@@ -96,7 +96,8 @@ $("#photo").addEventListener("change", async (e) => {
     status.textContent = `Something went wrong: ${err.message}`;
     loadItems();
   }
-});
+};
+for (const input of document.querySelectorAll(".photo-input")) input.addEventListener("change", addPhotos);
 
 function openEditor(item) {
   const form = $("#edit-form");
