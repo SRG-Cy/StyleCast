@@ -67,6 +67,26 @@ export function forWho(query, who) {
 // A search must name a piece of clothing; small models sometimes echo instructions instead.
 const CLOTHING = /\b(t-?shirts?|tees?|tops?|shirts?|blouses?|jumpers?|sweaters?|hoodies?|cardigans?|jeans|trousers|chinos|pants|shorts|skirts?|leggings|dress(es)?|jackets?|coats?|parkas?|blazers?|raincoats?|fleeces?|gilets?|trainers|sneakers|boots|shoes|sandals|loafers|scarf|scarves|hats?|beanies?|gloves|bags?|belts?|socks)\b/i;
 
+const FILLER = new Set(["i", "im", "i'm", "want", "need", "some", "a", "an", "the", "new", "buy", "get", "me", "find",
+  "for", "looking", "under", "cheap", "pair", "pairs", "of", "any", "show", "my", "to", "with", "and", "or", "can", "you",
+  "please", "what", "good", "nice", "few", "two", "one", "suggest", "recommend", "like", "would", "is", "are", "today"]);
+
+// The clothes a request names, with up to two describing words: "smart black shoes under €60"
+// -> ["smart black shoes"]. These are searched as asked, without guessing gaps.
+export function askedFor(message) {
+  const words = message.toLowerCase().replace(/[€£$₹]?\d+(?:[.,]\d+)?\s*(euros?|eur|pounds?|gbp|dollars?|usd|rupees?|inr)?/g, " ")
+    .replace(/[^\p{L}' -]/gu, " ").split(/\s+/).filter(Boolean);
+  const found = [];
+  words.forEach((w, i) => {
+    if (!CLOTHING.test(w) || found.length === 3) return;
+    const before = [];
+    for (let j = i - 1; j >= 0 && before.length < 2 && !FILLER.has(words[j]) && !CLOTHING.test(words[j]); j--) before.unshift(words[j]);
+    const q = [...before, w].join(" ");
+    if (!found.includes(q)) found.push(q);
+  });
+  return found;
+}
+
 // When the request names no clothing ("I have €50"), Gemma picks from the gaps the app found,
 // so a small model can't suggest things already owned. "Smart shoes under €60" lets it choose freely.
 export const gapsOnly = (message, needs) => needs.length > 0 && !CLOTHING.test(message);
