@@ -87,6 +87,7 @@ npm test
 ```
 
 Runs the outfit rules, the budget chat's rules and the shopping server with Node's built-in test runner (Node 20+). No packages to install.
+GitHub Actions runs the same tests on every pull request and on each push to `main`.
 
 ## Licence
 
