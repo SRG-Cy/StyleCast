@@ -37,12 +37,26 @@ function card(item) {
   return el;
 }
 
+// The wardrobe hangs on rails, one per category, in the order you'd put them on.
+const RAILS = [["outerwear", "Layers"], ["top", "Tops"], ["dress", "Dresses"], ["bottom", "Bottoms"], ["shoes", "Shoes"], ["accessory", "Extras"]];
+const ORDER = Object.fromEntries(RAILS.map(([cat], i) => [cat, i]));
+
+function rail(title, list) {
+  const sec = document.createElement("section");
+  sec.className = "rail";
+  sec.innerHTML = `<h2></h2><div class="bar"></div><div class="row"></div>`;
+  sec.querySelector("h2").append(title, Object.assign(document.createElement("span"), { textContent: list.length }));
+  sec.querySelector(".row").replaceChildren(...list.map(card));
+  return sec;
+}
+
 async function loadItems() {
   items = await store.all();
   const box = $("#items");
   const shown = filter ? items.filter((i) => i.category === filter) : items;
-  box.replaceChildren(...shown.map(card));
-  if (!items.length) box.innerHTML = "<p>No clothes yet. Tap “Snap new clothes” to photograph your first item, or add the sample clothes.</p>";
+  box.replaceChildren(...RAILS.map(([cat, title]) => [title, shown.filter((i) => i.category === cat)])
+    .filter(([, list]) => list.length).map(([title, list]) => rail(title, list)));
+  if (!items.length) box.innerHTML = "<p>No clothes yet. Tap “Add clothes” to photograph your first item, or try the sample clothes.</p>";
   else if (!shown.length) box.innerHTML = "<p>Nothing in this category yet.</p>";
   const washing = items.filter((i) => i.inWash).length;
   $("#count").textContent = items.length ? `${items.length} item${items.length === 1 ? "" : "s"}${washing ? ` · ${washing} in the wash` : ""}` : "";
@@ -117,22 +131,12 @@ function openEditor(item) {
   dlg.showModal();
 }
 
-for (const btn of document.querySelectorAll("#filters .pill-btn")) {
+for (const btn of document.querySelectorAll("#filters .chip-btn")) {
   btn.addEventListener("click", () => {
     filter = btn.dataset.cat;
-    document.querySelectorAll("#filters .pill-btn").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+    document.querySelectorAll("#filters .chip-btn").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
     loadItems();
   });
-}
-
-// The page background follows the forecast.
-function sky(w) {
-  const avg = (w.tempMin + w.tempMax) / 2;
-  if (/thunder/.test(w.summary)) return "storm";
-  if (w.rainChance >= 50 || /rain|showers|drizzle/.test(w.summary)) return "rain";
-  if (/snow/.test(w.summary) || avg < 6) return "cold";
-  if (/clear/.test(w.summary)) return "sun";
-  return "cloud";
 }
 
 function gapItem(text) {
@@ -150,7 +154,7 @@ function gapItem(text) {
 
 const occasion = () => document.querySelector('input[name="occasion"]:checked').value;
 
-// Sticker-shaped placeholders while the forecast loads.
+// Placeholders in the mirror while the forecast loads.
 function skeleton() {
   return Array.from({ length: 4 }, () => Object.assign(document.createElement("div"), { className: "card skeleton" }));
 }
@@ -164,14 +168,13 @@ async function showOutfit() {
     const w = await weather.today(await weather.position());
     const chosen = pick(items, w, occasion());
     lastOutfit = { ids: chosen.map((i) => i.id), date: w.date };
-    document.body.className = `sky-${sky(w)}`;
-    // Match the phone's status bar to the new sky.
-    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.body).getPropertyValue("--sky-top").trim();
     $("#temp").textContent = `${Math.round(w.tempMax)}°`;
     $("#summary").textContent = w.summary;
-    $("#weather").textContent = `Low ${Math.round(w.tempMin)}° · ${w.rainChance}% rain · wind ${Math.round(w.windKmh)} km/h` +
+    $("#weather").textContent = `Low ${Math.round(w.tempMin)}° · ${w.rainChance}% rain · wind\u00a0${Math.round(w.windKmh)}\u00a0km/h` +
       (w.offline ? ` (offline: saved forecast for ${w.date})` : "");
-    $("#outfit").replaceChildren(...chosen.map(card));
+    // Head to toe, the way you'd see it in a mirror.
+    const inMirror = [...chosen].sort((a, b) => (ORDER[a.category] ?? 9) - (ORDER[b.category] ?? 9));
+    $("#outfit").replaceChildren(...inMirror.map(card));
     $("#outfit").classList.remove("enter");
     void $("#outfit").offsetWidth; // restart the entry animation
     $("#outfit").classList.add("enter");
@@ -190,7 +193,7 @@ async function showOutfit() {
 }
 
 $("#get-outfit").addEventListener("click", showOutfit);
-$("#start").addEventListener("click", () => showTab("wardrobe"));
+$("#start-btn").addEventListener("click", () => showTab("wardrobe"));
 for (const radio of document.querySelectorAll('input[name="occasion"]')) radio.addEventListener("change", showOutfit);
 
 $("#wear").addEventListener("click", async () => {
@@ -252,4 +255,5 @@ if (!standalone && !dismissed && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
   $("#install").hidden = false;
 }
 
+$("#date").textContent = new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 loadItems().then(showOutfit);

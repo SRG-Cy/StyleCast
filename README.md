@@ -5,13 +5,13 @@ Photograph your wardrobe once. Every morning, get an outfit from your own clothe
 Built for the DEV Hacktoberfest 2026 Open-Source AI Challenge, Week 2 ("Side Hustle").
 
 <p>
-  <img src="docs/screenshots/today-rain.png" width="200" alt="Today on a rainy day: 13 degrees, a blue sky, and an outfit of hoodie, jeans, denim jacket and trainers">
-  <img src="docs/screenshots/today-sunny.png" width="200" alt="Today on a sunny day: 22 degrees, an orange sky, and a t-shirt, shorts and trainers">
-  <img src="docs/screenshots/wardrobe.png" width="200" alt="The wardrobe grid with category filters">
+  <img src="docs/screenshots/today-rain.png" width="200" alt="Today on a rainy day: 13 degrees under the curtain-red header, and an outfit of denim jacket, hoodie, jeans and trainers in an arched mirror">
+  <img src="docs/screenshots/today-sunny.png" width="200" alt="Today on a sunny day: 22 degrees, and a t-shirt, shorts and trainers in the mirror">
+  <img src="docs/screenshots/wardrobe.png" width="200" alt="The wardrobe, with each category hanging on its own brass rail">
   <img src="docs/screenshots/shop.png" width="200" alt="The Shop chat with country and who-for settings">
 </p>
 
-The background follows the forecast: blue when it rains, orange when it's sunny.
+Today's outfit stands in a fitting-room mirror under the forecast; the wardrobe hangs on rails, one per category.
 
 ## What it does
 
