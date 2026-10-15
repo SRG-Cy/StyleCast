@@ -3,13 +3,14 @@
 // - The app's own files: network first so updates show up straight away, cache when offline.
 // - The AI library on cdn.jsdelivr.net: cache first, since the URL pins an exact version.
 // - The model files from Hugging Face are cached by Transformers.js itself.
-// - The weather is never cached here; the app keeps the last forecast instead.
+// - The weather and shopping searches are never cached here.
 
-const APP = "stylecast-app-v1";
+const APP = "stylecast-app-v2";
 const LIBS = "stylecast-libs-v1";
 const SHELL = [
   "./", "index.html", "style.css", "manifest.webmanifest",
   "js/app.js", "js/store.js", "js/tagger.js", "js/weather.js", "js/outfit.js",
+  "js/chat.js", "js/shop.js", "js/gemma.js",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
 ];
 

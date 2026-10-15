@@ -30,6 +30,11 @@ export async function today(place = DEFAULT_PLACE) {
   }
 }
 
+// The last forecast saved on this device, or null. No network and no location prompt.
+export function lastSaved() {
+  try { return JSON.parse(localStorage.getItem(SAVED)); } catch { return null; }
+}
+
 async function fetchToday({ lat, lon }) {
   const params = new URLSearchParams({
     latitude: lat,

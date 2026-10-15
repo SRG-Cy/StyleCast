@@ -19,6 +19,7 @@
     <nav>
       <button class="tab active" data-tab="today">Today</button>
       <button class="tab" data-tab="wardrobe">Wardrobe</button>
+      <button class="tab" data-tab="shop">Shop</button>
     </nav>
   </header>
 
@@ -52,6 +53,34 @@
       </label>
       <p id="upload-status" class="muted"></p>
       <div id="items" class="grid"></div>
+    </section>
+
+    <section id="shop" class="panel" hidden>
+      <p class="muted">Tell me your budget and I'll find real items that fill your wardrobe's gaps.</p>
+      <div class="row">
+        <label for="shop-country">Shop in</label>
+        <select id="shop-country">
+          <option value="ie">Ireland (€)</option><option value="de">Germany (€)</option><option value="fr">France (€)</option>
+          <option value="es">Spain (€)</option><option value="it">Italy (€)</option><option value="nl">Netherlands (€)</option>
+          <option value="uk">UK (£)</option><option value="us">US ($)</option><option value="in">India (₹)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="shop-who">Shop for</label>
+        <select id="shop-who">
+          <option value="any">Anyone</option><option value="women's">Women</option><option value="men's">Men</option>
+        </select>
+      </div>
+      <div class="chips">
+        <button type="button" class="chip">I have €50 today. What should I buy to improve my wardrobe?</button>
+        <button type="button" class="chip">What goes with my jeans?</button>
+      </div>
+      <div id="chat-log" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" autocomplete="off" placeholder="I have €50, what should I buy?" aria-label="Message">
+        <button id="chat-send" class="primary">Send</button>
+      </form>
+      <p class="muted small-text">The chat AI (Gemma) runs on this device and downloads once, the first time you send a message, so use Wi-Fi. Only short search words like "rain jacket" go to the shopping server. Shop links may earn StyleCast a small commission.</p>
     </section>
 
     <p class="muted small">Your photos and wardrobe stay on this device. The tagging AI runs in your browser.</p>
@@ -89,5 +118,6 @@
   </dialog>
 
   <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/chat.js"></script>
 </body>
 </html>
