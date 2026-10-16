@@ -27,9 +27,9 @@ async function load(onProgress) {
   // allows a tab, and Safari reloaded the page ("A problem repeatedly occurred").
   const phone = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
   const gpu = !phone && !!navigator.gpu && !!(await navigator.gpu.requestAdapter().catch(() => null));
-  // The 8-bit text half is as good as full size, so phones save memory there. The photo half
-  // stays at 16-bit: 8-bit photos are where jeans turned into jackets (scripts/accuracy.mjs).
-  const dtype = gpu ? "fp32" : { text: "q8", vision: "fp16" };
+  // Phones use the 16-bit model: as accurate as full size, at half the memory. The 8-bit one
+  // got the type right far less often (scripts/accuracy.mjs: 64% vs 77%).
+  const dtype = gpu ? "fp32" : "fp16";
   const key = `stylecast-clip-${MODEL}-${JSON.stringify(dtype)}-${VECTORS_VERSION}`;
   let cachedVectors;
   try { cachedVectors = JSON.parse(localStorage.getItem(key)); } catch {}

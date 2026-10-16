@@ -10,8 +10,6 @@ export const MODEL = "Xenova/clip-vit-base-patch32";
 export async function createClip(lib, { device, dtype = "fp32", progress_callback, cachedVectors } = {}) {
   const d = typeof dtype === "string" ? { text: dtype, vision: dtype } : dtype;
   const opts = device ? { device, progress_callback } : { progress_callback };
-  const processor = await lib.AutoProcessor.from_pretrained(MODEL);
-  const vision = await lib.CLIPVisionModelWithProjection.from_pretrained(MODEL, { ...opts, dtype: d.vision });
 
   let vectors = cachedVectors;
   if (!vectors) {
@@ -24,8 +22,12 @@ export async function createClip(lib, { device, dtype = "fp32", progress_callbac
     };
     const p = prompts();
     vectors = { types: await embed(p.types), colours: await embed(p.colours) };
+    // Free the text half before loading the photo half, so a phone only holds one at a time.
     await text.dispose?.();
   }
+
+  const processor = await lib.AutoProcessor.from_pretrained(MODEL);
+  const vision = await lib.CLIPVisionModelWithProjection.from_pretrained(MODEL, { ...opts, dtype: d.vision });
 
   return {
     vectors,
