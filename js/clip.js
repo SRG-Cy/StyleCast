@@ -7,9 +7,9 @@ import { prompts, labelVectors, rank, padToSquare } from "./labels.js";
 export const MODEL = "Xenova/clip-vit-base-patch32";
 
 // dtype can be one string or { text, vision }, so the two halves can use different sizes.
-export async function createClip(lib, { device = "wasm", dtype = "fp32", progress_callback, cachedVectors } = {}) {
+export async function createClip(lib, { device, dtype = "fp32", progress_callback, cachedVectors } = {}) {
   const d = typeof dtype === "string" ? { text: dtype, vision: dtype } : dtype;
-  const opts = { device, progress_callback };
+  const opts = device ? { device, progress_callback } : { progress_callback };
   const processor = await lib.AutoProcessor.from_pretrained(MODEL);
   const vision = await lib.CLIPVisionModelWithProjection.from_pretrained(MODEL, { ...opts, dtype: d.vision });
 

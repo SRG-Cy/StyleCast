@@ -8,7 +8,7 @@
 // It compares the old way (one word per type, the photo cropped to its middle) with the
 // current js/clip.js, at the model sizes the app can use, and prints a table.
 
-import { readdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as lib from "@huggingface/transformers";
 import { createClip, MODEL } from "../js/clip.js";
@@ -41,16 +41,33 @@ async function getJson(url, what) {
   }
 }
 
+// Downloaded photos are kept here so later runs (and CI, via actions/cache) skip the slow server.
+const CACHE = "photos-cache";
+
 async function datasetPhotos() {
+  try {
+    const cached = JSON.parse(await readFile(join(CACHE, "index.json"), "utf8"));
+    if (cached.perType === PER_TYPE) {
+      return Promise.all(cached.photos.map(async (p) => ({ ...p, bytes: await readFile(join(CACHE, p.file)) })));
+    }
+  } catch {}
   const photos = [];
   for (const article of Object.keys(ARTICLES)) {
     const where = encodeURIComponent(`"articleType"='${article}'`);
     const url = `https://datasets-server.huggingface.co/filter?dataset=${DATASET}&config=default&split=train&where=${where}&offset=0&length=${PER_TYPE}`;
     for (const { row } of (await getJson(url, article)).rows) {
       const img = await fetch(row.image.src);
-      photos.push({ article, accept: ARTICLES[article], category: categoryOf(article), bytes: await img.arrayBuffer() });
+      photos.push({ article, accept: ARTICLES[article], category: categoryOf(article), bytes: Buffer.from(await img.arrayBuffer()) });
     }
   }
+  await mkdir(CACHE, { recursive: true });
+  const index = [];
+  for (const [i, { bytes, ...p }] of photos.entries()) {
+    const file = `${i}.jpg`;
+    await writeFile(join(CACHE, file), bytes);
+    index.push({ ...p, file });
+  }
+  await writeFile(join(CACHE, "index.json"), JSON.stringify({ perType: PER_TYPE, photos: index }));
   return photos;
 }
 

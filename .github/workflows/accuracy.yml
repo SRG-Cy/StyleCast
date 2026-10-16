@@ -15,6 +15,13 @@ jobs:
         with:
           node-version: 22
       - run: npm i --no-save @huggingface/transformers@3.8.1
+      - uses: actions/cache@v4
+        with:
+          path: |
+            photos-cache
+            ~/.cache/huggingface
+            node_modules/@huggingface/transformers/.cache
+          key: accuracy-photos-v1
       - run: |
           set -o pipefail
           node scripts/accuracy.mjs | tee result.txt

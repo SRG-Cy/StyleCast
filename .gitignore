@@ -6,3 +6,4 @@ data/
 uploads/
 *.sqlite
 .DS_Store
+photos-cache/
