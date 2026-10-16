@@ -16,5 +16,6 @@ jobs:
           node-version: 22
       - run: npm i --no-save @huggingface/transformers@3.8.1
       - run: |
+          set -o pipefail
           node scripts/accuracy.mjs | tee result.txt
           { echo '```'; cat result.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

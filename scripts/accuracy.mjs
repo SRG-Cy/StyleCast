@@ -29,14 +29,24 @@ const ARTICLES = {
 };
 const categoryOf = (article) => (article === "Jackets" ? "outerwear" : TYPES[ARTICLES[article][0]].category);
 
+// The dataset server answers 500 "index is loading" while it warms up, so wait and retry.
+async function getJson(url, what) {
+  for (let wait = 5; ; wait *= 2) {
+    const res = await fetch(url);
+    if (res.ok) return res.json();
+    const body = await res.text();
+    if (wait > 160) throw new Error(`${what}: ${res.status} ${body}`);
+    console.log(`${what}: ${res.status}, retrying in ${wait}s`);
+    await new Promise((r) => setTimeout(r, wait * 1000));
+  }
+}
+
 async function datasetPhotos() {
   const photos = [];
   for (const article of Object.keys(ARTICLES)) {
     const where = encodeURIComponent(`"articleType"='${article}'`);
     const url = `https://datasets-server.huggingface.co/filter?dataset=${DATASET}&config=default&split=train&where=${where}&offset=0&length=${PER_TYPE}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`${article}: ${res.status} ${await res.text()}`);
-    for (const { row } of (await res.json()).rows) {
+    for (const { row } of (await getJson(url, article)).rows) {
       const img = await fetch(row.image.src);
       photos.push({ article, accept: ARTICLES[article], category: categoryOf(article), bytes: await img.arrayBuffer() });
     }
