@@ -1,0 +1,20 @@
+name: Tagging accuracy
+
+# Downloads CLIP and labelled photos, so it only runs when the tagger changes (or by hand).
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: [js/labels.js, js/clip.js, js/tagger.js, scripts/accuracy.mjs, .github/workflows/accuracy.yml]
+
+jobs:
+  accuracy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save @huggingface/transformers@3.8.1
+      - run: |
+          node scripts/accuracy.mjs | tee result.txt
+          { echo '```'; cat result.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
