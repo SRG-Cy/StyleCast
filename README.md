@@ -29,7 +29,7 @@ A chat forgets your wardrobe the moment you close it. StyleCast remembers every 
 
 There's nothing to install and no account. Open the link on your phone, photograph your clothes, done.
 
-- The tagging AI runs on your phone or laptop (WebGPU on computers that have it; WebAssembly with the 8-bit model on phones, which keeps it within mobile memory limits). The model downloads once (about 150 MB) and the browser keeps it.
+- The tagging AI runs on your phone or laptop (WebGPU on computers that have it; WebAssembly with the 16-bit model on phones, loaded one half at a time to stay within mobile memory limits). The model downloads once (about 300 MB on phones) and the browser keeps it.
 - Photos and the wardrobe are stored in your browser (IndexedDB). Nothing is uploaded, and there is no server to pay for.
 - The forecast comes from Open-Meteo, called straight from the browser.
 - The budget chat uses Gemma, also running on your device. Only short search words like "rain jacket" (and a price cap) go to StyleCast's small shopping server, which asks Google Shopping through SerpApi. Photos and the wardrobe list never leave the device.
@@ -44,7 +44,7 @@ There's nothing to install and no account. Open the link on your phone, photogra
 | Shopping results | SerpApi (Google Shopping), called from the shopping server on Render | Paid API, free tier |
 | Weather | Open-Meteo (free, no key) | CC BY 4.0 |
 
-CLIP picks the clothing type and colour from fixed lists. Each type carries the other tags (warmth, waterproof, formality), and every tag is editable. Outfits are picked by rules: weather first, then occasion, then what you haven't worn lately.
+CLIP picks the clothing type and colour from fixed lists, comparing the photo with a few plain descriptions of each (js/labels.js). On 272 labelled product photos it gets the type right 77% of the time and the broad category (top, bottom, shoes...) 93%; `node scripts/accuracy.mjs` measures it. Each type carries the other tags (warmth, waterproof, formality), and every tag is editable. Outfits are picked by rules: weather first, then occasion, then what you haven't worn lately.
 
 In the budget chat, Gemma reads your wardrobe and the gaps the rules found, and plans up to three searches. Rules then pick one product per search so the total never goes over budget, and Gemma explains the picks. If Gemma can't load, the rules plan the searches and write a plain explanation instead.
 

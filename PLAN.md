@@ -13,7 +13,7 @@ Out: virtual try-on, images of you wearing outfits, accounts/login, multi-item p
 ## Stack (changed Oct 15: everything runs in the browser)
 
 - Static web app, mobile-first, no build step, hosted on GitHub Pages
-- Tagging: CLIP zero-shot via Transformers.js (WebGPU, falling back to WebAssembly); the model downloads once (about 150 MB)
+- Tagging: CLIP zero-shot via Transformers.js (WebGPU, falling back to WebAssembly); the model downloads once (about 300 MB on phones, 16-bit)
 - Storage: IndexedDB in the user's browser; photos never leave the device
 - Outfit picking: rules in JavaScript (weather, occasion, wear history)
 - Budget chat: Gemma 3 (1B on WebGPU, 270M without it) via Transformers.js, on the device
