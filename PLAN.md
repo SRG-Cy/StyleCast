@@ -29,17 +29,22 @@ The first version used a Python server with Ollama (Qwen2.5-VL). It was dropped 
 |---|---|---|
 | Tue Oct 14 | Repo, first version (Python server + Ollama) | Done, then replaced |
 | Wed Oct 15 | Rebuild in the browser: wardrobe, tagging, outfits, wear history, "in the wash", gap tips. Make it installable and offline. Add the Shop tab (Gemma budget chat, Render shopping server, SerpApi). Rebuild the UI as Fitting Room. | Done (#2 to #7) |
-| Thu Oct 16 | Turn on GitHub Pages. Deploy the shopping server on Render with the SerpApi key and try a real search. Test on a real Android phone and iPhone. Measure tagging speed and accuracy on 10+ real photos with `browser-test.html`; switch to SmolVLM if CLIP is too often wrong. | To do |
-| Fri Oct 17 | Thumbs up/down on outfits, polish from the phone test, test with 30+ real items. | To do |
-| Sat Oct 18 | README, screenshots, 60-second demo video/GIF, DEV post with the side-hustle pricing story and the numbers. Submit. | To do |
+| Thu Oct 16 | Turn on GitHub Pages. Deploy the shopping server on Render with the SerpApi key and try a real search. Test on a real Android phone and iPhone. Measure tagging speed and accuracy on 10+ real photos with `browser-test.html`; switch to SmolVLM if CLIP is too often wrong. | Done, except iPhone. Accuracy measured on 272 labelled photos instead; fixing labels and preprocessing kept CLIP (#12) |
+| Fri Oct 17 | Thumbs up/down on outfits, polish from the phone test, test with 30+ real items. | Phone polish done (Take photo button, #11). Thumbs up/down not built |
+| Sat Oct 18 | README, screenshots, 60-second demo video/GIF, DEV post with the side-hustle pricing story and the numbers. Submit. | Done, without the video |
 
-## Numbers to collect for the post
+## Numbers for the post
 
-Seconds per photo (phone and laptop), tag accuracy on real photos, model download size, and a rough cost comparison with a paid vision API (StyleCast costs nothing per user to run, since the AI runs on the user's device).
+Collected on 272 labelled product photos (`scripts/accuracy.mjs`):
+
+- Right clothing type: phones 55% -> 77%, laptops 72% -> 77%.
+- Right category: phones 90% -> 93%, laptops 92% -> 93%.
+- Model download on phones: about 300 MB the first time (was about 150 MB with the 8-bit model).
+- Cost per user: €0 for the AI, since it runs on the user's device. The only server is the capped shopping service.
 
 ## Biggest risks
 
 1. Tag accuracy of a small in-browser model -> measure on Thursday; one-tap edits; SmolVLM as a stronger option.
 2. Slow or failing AI on older phones -> WebAssembly fallback; test on a real phone Thursday.
 3. Setup effort of photographing many items -> start with 10 items; batch upload from the gallery.
-4. Generic picks -> thumbs up/down shapes future choices.
+4. Generic picks -> thumbs up/down shapes future choices (not built yet).
