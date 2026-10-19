@@ -1,8 +1,12 @@
 # StyleCast
 
+![StyleCast: your wardrobe, dressed for the weather. An outfit planner whose AI runs on your phone.](docs/cover.png)
+
 Photograph your wardrobe once. Every morning, get an outfit from your own clothes that fits the real forecast.
 
-Built for the DEV Hacktoberfest 2026 Open-Source AI Challenge, Week 2 ("Side Hustle").
+**Try it:** https://srg-cy.github.io/StyleCast/ (tap "Add sample clothes to try it out" to see it work without photographing anything). It works best in Chrome on a laptop or Android phone.
+
+Built for the DEV Hacktoberfest 2026 Open-Source AI Challenge, Week 2 ("Side Hustle"), entered for the Gemma, Render and SerpApi prize categories.
 
 <p>
   <img src="docs/screenshots/today-rain.png" width="200" alt="Today on a rainy day: 13 degrees under the curtain-red header, and an outfit of denim jacket, hoodie, jeans and trainers in an arched mirror">
@@ -44,7 +48,14 @@ There's nothing to install and no account. Open the link on your phone, photogra
 | Shopping results | SerpApi (Google Shopping), called from the shopping server on Render | Paid API, free tier |
 | Weather | Open-Meteo (free, no key) | CC BY 4.0 |
 
-CLIP picks the clothing type and colour from fixed lists, comparing the photo with a few plain descriptions of each (js/labels.js). On 272 labelled product photos it gets the type right 77% of the time and the broad category (top, bottom, shoes...) 93%; `node scripts/accuracy.mjs` measures it. Each type carries the other tags (warmth, waterproof, formality), and every tag is editable. Outfits are picked by rules: weather first, then occasion, then what you haven't worn lately.
+CLIP picks the clothing type and colour from fixed lists, comparing the photo with a few plain descriptions of each (js/labels.js). Photos are padded to a square rather than cropped, so tall items like jeans stay whole. On 272 labelled product photos:
+
+| Device | Right clothing type | Right category (top, bottom, shoes...) |
+|---|---|---|
+| Phone (WebAssembly, 16-bit) | 77% (was 55%) | 93% (was 90%) |
+| Laptop (WebGPU) | 77% (was 72%) | 93% (was 92%) |
+
+The "was" column is before the labels and preprocessing fix in #12. `node scripts/accuracy.mjs` measures it, and the Tagging accuracy workflow runs it on every pull request that touches the tagger. Each type carries the other tags (warmth, waterproof, formality), and every tag is editable. Outfits are picked by rules: weather first, then occasion, then what you haven't worn lately.
 
 In the budget chat, Gemma reads your wardrobe and the gaps the rules found, and plans up to three searches. Rules then pick one product per search so the total never goes over budget, and Gemma explains the picks. If Gemma can't load, the rules plan the searches and write a plain explanation instead.
 
@@ -95,4 +106,9 @@ MIT. See [LICENSE](LICENSE).
 
 ## Status
 
-Under construction (Oct 14–18, 2026). See [PLAN.md](PLAN.md).
+Built Oct 14–18, 2026 and live:
+
+- App: https://srg-cy.github.io/StyleCast/ (GitHub Pages, from `main`)
+- Shopping server: https://stylecast-shop.onrender.com (Render, free plan)
+
+First users were two friends tagging their own clothes on Android phones. iPhone Safari hasn't been tested yet. See [PLAN.md](PLAN.md) for how the week went.
